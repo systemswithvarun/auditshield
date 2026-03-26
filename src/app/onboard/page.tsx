@@ -50,6 +50,7 @@ export default function OnboardPage() {
       const locSlug = slugify(formData.locationName);
 
       // Step B: Insert into organizations with linked owner_id
+      console.log('User ID for Org:', ownerId);
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .insert({
@@ -60,7 +61,10 @@ export default function OnboardPage() {
         .select("id")
         .single();
 
-      if (orgError) throw new Error(orgError.message || "Failed to create organization. Business name may be taken.");
+      if (orgError) {
+        console.error("Organizations insert error:", orgError);
+        throw new Error(orgError.message || "Failed to create organization. Business name may be taken.");
+      }
 
       // Step B: Insert into locations
       const { data: locData, error: locError } = await supabase
