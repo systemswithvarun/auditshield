@@ -76,10 +76,12 @@ type FieldState = {
 type Props = {
   station: StationConfig;
   staffId: string;
+  organizationId: string;
+  locationId: string;
   onReset: () => void;
 };
 
-export function StationForm({ station, staffId, onReset }: Props) {
+export function StationForm({ station, staffId, organizationId, locationId, onReset }: Props) {
   const [formData, setFormData] = useState<Record<string, FieldState>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -154,6 +156,8 @@ export function StationForm({ station, staffId, onReset }: Props) {
     const payload = {
       // Using the real staff UUID from our staff fetch
       staff_id: staffId,
+      organization_id: organizationId,
+      location_id: locationId,
       action: `${station.label} Audit Log`,
       details: {
         is_breach: isBreachOverall,

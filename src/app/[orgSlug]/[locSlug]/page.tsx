@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { X, Delete, LogOut } from "lucide-react";
 import { StationForm, STATIONS, StationConfig } from "@/components/StationForm";
 import { NotificationHandler } from "@/services/alertService";
@@ -26,6 +27,10 @@ export default function KioskPage() {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [liveStaff, setLiveStaff] = useState<Staff[]>([]);
   
+  const params = useParams() as { orgSlug: string; locSlug: string };
+  const [orgId, setOrgId] = useState<string>("");
+  const [locId, setLocId] = useState<string>("");
+  
   // Login State
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [pin, setPin] = useState<string>("");
@@ -38,7 +43,24 @@ export default function KioskPage() {
 
   useEffect(() => {
     const fetchStaff = async () => {
-      const { data, error } = await supabase.from('staff').select('*');
+      let resolvedOrgId = params.orgSlug;
+      let resolvedLocId = params.locSlug;
+
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (!uuidRegex.test(resolvedOrgId)) {
+        const { data } = await supabase.from('organizations').select('id').eq('slug', resolvedOrgId).single();
+        if (data) resolvedOrgId = data.id;
+      }
+      if (!uuidRegex.test(resolvedLocId)) {
+        const { data } = await supabase.from('locations').select('id').eq('slug', resolvedLocId).single();
+        if (data) resolvedLocId = data.id;
+      }
+
+      setOrgId(resolvedOrgId);
+      setLocId(resolvedLocId);
+
+      const { data, error } = await supabase.from('staff').select('*').eq('location_id', resolvedLocId);
       let combined: Staff[] = [];
       if (!error && data) {
         combined = data.map((d: any) => {
@@ -60,7 +82,9 @@ export default function KioskPage() {
       }
       setLiveStaff(combined.length > 0 ? combined : []);
     };
-    fetchStaff();
+    if (params.orgSlug && params.locSlug) {
+      fetchStaff();
+    }
 
     // Load config
     const cfg = localStorage.getItem("auditshield_device_config");
@@ -244,6 +268,8 @@ export default function KioskPage() {
                 key={selectedStation.id} 
                 station={selectedStation} 
                 staffId={loggedInStaff.id}
+                organizationId={orgId}
+                locationId={locId}
                 onReset={() => setSelectedStation(null)} 
               />
             )}
