@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
-import { AlertCircle, Store, User, Building, KeyRound, Loader2 } from "lucide-react";
+import { AlertCircle, Store, User, Building, KeyRound, Loader2, Mail, Lock } from "lucide-react";
 
 export default function OnboardPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    email: "",
+    password: "",
     businessName: "",
     locationName: "",
     adminName: "",
@@ -26,7 +28,7 @@ export default function OnboardPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.businessName.trim() || !formData.locationName.trim() || !formData.adminName.trim() || formData.pin.length !== 4) {
+    if (!formData.email.trim() || !formData.password.trim() || !formData.businessName.trim() || !formData.locationName.trim() || !formData.adminName.trim() || formData.pin.length !== 4) {
       setError("Please properly fill out all fields and ensure the PIN is 4 digits.");
       return;
     }
@@ -34,13 +36,24 @@ export default function OnboardPage() {
     setError("");
 
     try {
+      // Step A: Register the User via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (authError) throw new Error(authError.message || "Failed to securely register user profile.");
+      if (!authData.user) throw new Error("Authentication failed to provide a valid user token.");
+
+      const ownerId = authData.user.id;
       const orgSlug = slugify(formData.businessName);
       const locSlug = slugify(formData.locationName);
 
-      // Step A: Insert into organizations
+      // Step B: Insert into organizations with linked owner_id
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .insert({
+          owner_id: ownerId,
           name: formData.businessName,
           slug: orgSlug,
         })
@@ -77,8 +90,8 @@ export default function OnboardPage() {
 
       if (staffError) throw new Error(staffError.message || "Failed to register admin profile.");
 
-      // Success -> navigate to kiosk
-      router.push(`/${orgSlug}/${locSlug}`);
+      // Success -> navigate to Manager Dashboard
+      router.push(`/admin/dashboard`);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred during setup.");
       setLoading(false);
@@ -98,18 +111,48 @@ export default function OnboardPage() {
 
         <form onSubmit={handleSubmit} className="p-8 pb-10 flex flex-col gap-5">
           {error && (
-             <div className="p-3.5 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] text-[13px] rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 shadow-sm">
-                <AlertCircle size={16} className="shrink-0 mt-[1px]" />
-                <div className="leading-[1.4]">{error}</div>
-             </div>
+            <div className="p-3.5 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] text-[13px] rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 shadow-sm">
+              <AlertCircle size={16} className="shrink-0 mt-[1px]" />
+              <div className="leading-[1.4]">{error}</div>
+            </div>
           )}
+
+          <div>
+            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
+              <Mail size={14} className="text-[#888]" /> Administrator Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="admin@joesdiner.com"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[14px] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] focus:bg-[#fcfbf9]"
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
+              <Lock size={14} className="text-[#888]" /> Dashboard Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[14px] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] focus:bg-[#fcfbf9]"
+            />
+          </div>
+
+          <div className="h-[1px] bg-black/5 my-2 w-[calc(100%+64px)] -ml-8" />
 
           <div>
             <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
               <Building size={14} className="text-[#888]" /> Business Name
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="businessName"
               placeholder="e.g., Joe's Diner"
               value={formData.businessName}
@@ -122,8 +165,8 @@ export default function OnboardPage() {
             <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
               <Store size={14} className="text-[#888]" /> Store Location
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="locationName"
               placeholder="e.g., Downtown Main St"
               value={formData.locationName}
@@ -138,8 +181,8 @@ export default function OnboardPage() {
             <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
               <User size={14} className="text-[#888]" /> Admin Name
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="adminName"
               placeholder="Your full name"
               value={formData.adminName}
@@ -152,8 +195,8 @@ export default function OnboardPage() {
             <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
               <KeyRound size={14} className="text-[#888]" /> 4-Digit PIN
             </label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               name="pin"
               placeholder="••••"
               value={formData.pin}

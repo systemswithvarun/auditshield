@@ -4,6 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. Organizations (The Client)
 CREATE TABLE organizations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_id UUID REFERENCES auth.users(id),
     name TEXT NOT NULL,
     subscription_tier TEXT DEFAULT 'basic', -- 'basic', 'pro', 'enterprise'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
