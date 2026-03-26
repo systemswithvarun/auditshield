@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Copy, ExternalLink, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function ManagerDashboard() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [org, setOrg] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
@@ -25,10 +27,14 @@ export default function ManagerDashboard() {
           .from("organizations")
           .select("*")
           .eq("owner_id", ownerId)
-          .single();
+          .maybeSingle();
           
-        if (orgError || !orgData) {
+        if (orgError) {
           throw new Error("Failed to load organization. Please ensure your account has an assigned organization.");
+        }
+        if (!orgData) {
+          router.push("/onboard/finish-setup");
+          return;
         }
         setOrg(orgData);
 
