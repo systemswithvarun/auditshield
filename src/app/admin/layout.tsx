@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const checkAuth = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) {
-        router.push("/onboard");
+        router.push("/login");
       } else {
         setLoading(false);
       }
@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/onboard");
+    router.push("/login");
   };
 
   const navLinks = [

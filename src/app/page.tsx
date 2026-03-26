@@ -13,7 +13,7 @@ export default function LandingPage() {
           <span className="text-[17px] font-semibold text-[#111110] tracking-tight">AuditShield</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/onboard" className="text-[14px] font-medium text-[#111110] hover:text-black/70 transition-colors">
+          <Link href="/login" className="text-[14px] font-medium text-[#111110] hover:text-black/70 transition-colors">
             Log in
           </Link>
           <Link 
