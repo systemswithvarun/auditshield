@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { X, Delete, LogOut } from "lucide-react";
 import { StationForm, STATIONS, StationConfig } from "@/components/StationForm";
+import PinPadModal from "@/components/PinPadModal";
 import { NotificationHandler } from "@/services/alertService";
 import { supabase } from "@/lib/supabase";
 
@@ -33,7 +34,6 @@ export default function KioskPage() {
   
   // Login State
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const [pin, setPin] = useState<string>("");
   const [loggedInStaff, setLoggedInStaff] = useState<Staff | null>(null);
 
   // Station State
@@ -108,50 +108,7 @@ export default function KioskPage() {
 
   const handleStaffClick = (staff: Staff) => {
     setSelectedStaff(staff);
-    setPin("");
   };
-
-  const handlePinInput = (digit: string) => {
-    if (pin.length < 4) {
-      setPin((prev) => prev + digit);
-    }
-  };
-
-  const handlePinDelete = () => {
-    setPin((prev) => prev.slice(0, -1));
-  };
-
-  const handlePinSubmit = async () => {
-    if (pin.length === 4) {
-      if (selectedStaff) {
-        // Verify PIN against the database
-        const { data, error } = await supabase
-          .from('staff')
-          .select('pin_code')
-          .eq('id', selectedStaff.id)
-          .single();
-
-        if (error || !data || data.pin_code !== pin) {
-          alert("Invalid PIN.");
-          setPin("");
-          return;
-        }
-
-        setLoggedInStaff(selectedStaff);
-        setSelectedStaff(null);
-        setPin("");
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (pin.length === 4) {
-      const timeout = setTimeout(() => {
-        handlePinSubmit();
-      }, 250);
-      return () => clearTimeout(timeout);
-    }
-  }, [pin]);
 
   const handleStationClick = (station: StationConfig) => {
     // If we're changing stations, we can scroll or transition. Here we just set state.
@@ -277,70 +234,16 @@ export default function KioskPage() {
         )}
       </div>
 
-      {/* PinPad Overlay */}
-      <div 
-        className={`absolute inset-0 bg-white/98 backdrop-blur-md z-10 flex flex-col pt-12 transition-all duration-300 ease-in-out ${
-          selectedStaff ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-4"
-        }`}
-      >
-        <button 
-          onClick={() => setSelectedStaff(null)}
-          className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center text-[#6b6b67] hover:text-[#111110] hover:bg-[#f8f7f4] rounded-full transition-colors"
-        >
-          <X size={20} className="stroke-[2.5]" />
-        </button>
-        
-        <div className="px-6 flex flex-col items-center flex-1">
-          <div className={`w-[56px] h-[56px] rounded-[14px] flex items-center justify-center mb-5 text-[20px] font-medium shrink-0 ${selectedStaff?.color}`}>
-            {selectedStaff?.initials}
-          </div>
-          <h2 className="text-[20px] font-medium text-[#111110] mb-1">Enter PIN</h2>
-          <p className="text-[14px] text-[#6b6b67] mb-8">Confirm identity for {selectedStaff?.name}</p>
-
-          {/* PIN Dots */}
-          <div className="flex gap-4 mb-10">
-            {[0, 1, 2, 3].map((idx) => (
-              <div 
-                key={idx} 
-                className={`w-[14px] h-[14px] rounded-full border-[1.5px] transition-all duration-200 ${
-                  idx < pin.length 
-                    ? 'bg-[#111110] border-[#111110] scale-110' 
-                    : 'bg-transparent border-black/20'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Keypad */}
-          <div className="grid grid-cols-3 gap-y-3 gap-x-6 w-full max-w-[260px] pb-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <button
-                key={num}
-                onClick={() => handlePinInput(num.toString())}
-                className="w-[68px] h-[68px] mx-auto rounded-full text-[24px] font-medium text-[#111110] hover:bg-[#f8f7f4] active:bg-[#ebebe9] transition-colors flex items-center justify-center"
-              >
-                {num}
-              </button>
-            ))}
-            <div className="col-start-2">
-              <button
-                onClick={() => handlePinInput("0")}
-                className="w-[68px] h-[68px] mx-auto rounded-full text-[24px] font-medium text-[#111110] hover:bg-[#f8f7f4] active:bg-[#ebebe9] transition-colors flex items-center justify-center"
-              >
-                0
-              </button>
-            </div>
-            <div className="col-start-3 flex items-center justify-center">
-              <button
-                onClick={handlePinDelete}
-                className="w-[68px] h-[68px] mx-auto rounded-full text-[#6b6b67] hover:text-[#111110] hover:bg-[#f8f7f4] active:bg-[#ebebe9] transition-colors flex items-center justify-center"
-              >
-                <Delete size={22} className="stroke-[2.5]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* PinPad Modal */}
+      <PinPadModal
+        isOpen={selectedStaff !== null}
+        onClose={() => setSelectedStaff(null)}
+        staff={selectedStaff}
+        onSuccess={(staff) => {
+          setLoggedInStaff(staff);
+          setSelectedStaff(null);
+        }}
+      />
     </div>
   );
 }
