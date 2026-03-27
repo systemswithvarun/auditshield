@@ -28,7 +28,7 @@ export type StationConfig = {
 
 type FieldState = {
   value: string | boolean | null;
-  hasBreach: boolean;
+  status: 'SAFE' | 'UNSAFE' | null;
   correctiveAction: string;
 };
 
@@ -46,23 +46,25 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
   const [loading, setLoading] = useState(false);
   const [dbError, setDbError] = useState("");
 
+  const validateTemp = (val: string, f: FieldConfig): 'SAFE' | 'UNSAFE' | null => {
+    if (val === "") return null;
+    const num = parseFloat(val);
+    if (isNaN(num)) return null;
+    
+    if (f.min !== null && num < f.min) return 'UNSAFE';
+    if (f.max !== null && num > f.max) return 'UNSAFE';
+    return 'SAFE';
+  };
+
   const handleInputChange = (fieldId: string, val: string) => {
     const f = station.fields.find((x) => x.id === fieldId)!;
-    let breach = false;
-    
-    if (val !== "") {
-      const num = parseFloat(val);
-      if (!isNaN(num)) {
-        if (f.min !== null && num < f.min) breach = true;
-        if (f.max !== null && num > f.max) breach = true;
-      }
-    }
+    const status = validateTemp(val, f);
 
     setFormData((prev) => ({
       ...prev,
       [fieldId]: {
         value: val,
-        hasBreach: breach,
+        status,
         correctiveAction: prev[fieldId]?.correctiveAction || "",
       },
     }));
@@ -73,7 +75,7 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
       ...prev,
       [fieldId]: {
         value: passed,
-        hasBreach: !passed,
+        status: passed ? 'SAFE' : 'UNSAFE',
         correctiveAction: prev[fieldId]?.correctiveAction || "",
       },
     }));
@@ -96,7 +98,7 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
       if (fd && fd.value !== "" && fd.value !== null) {
         hasData = true;
         // If breach and NO corrective action text, disabled!
-        if (fd.hasBreach && !fd.correctiveAction.trim()) {
+        if (fd.status === 'UNSAFE' && !fd.correctiveAction.trim()) {
           return true;
         }
       }
@@ -109,20 +111,33 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
     setDbError("");
 
     const isBreachOverall = station.fields.some(
-      (f) => formData[f.id]?.hasBreach
+      (f) => formData[f.id]?.status === 'UNSAFE'
     );
+
+    const entries = station.fields
+      .filter((f) => formData[f.id] && formData[f.id].value !== "" && formData[f.id].value !== null)
+      .map((f) => {
+         const ds = formData[f.id];
+         return {
+           field_id: f.id,
+           entry_value: ds.value,
+           status: ds.status,
+           corrective_action: ds.status === 'UNSAFE' ? ds.correctiveAction : null,
+           min_at_time: f.min,
+           max_at_time: f.max,
+           organization_id: organizationId,
+           location_id: locationId,
+           station_id: station.id,
+         };
+      });
 
     const payload = {
       // Using the real staff UUID from our staff fetch
       staff_id: staffId,
-      organization_id: organizationId,
-      location_id: locationId,
-      action: `${station.label} Audit Log`,
-      details: {
-        is_breach: isBreachOverall,
-        entry_data: formData,
-        station_id: station.id
-      }
+      station_id: station.id,
+      entry_data: entries,
+      is_breach: isBreachOverall,
+      source_type: 'manual'
     };
     
     // Execute Supabase Insert
@@ -182,8 +197,8 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
       
       <div className="flex flex-col gap-6">
         {station.fields.map((f) => {
-          const ds = formData[f.id] || { value: "", hasBreach: false, correctiveAction: "" };
-          const isWarn = ds.hasBreach;
+          const ds = formData[f.id] || { value: "", status: null, correctiveAction: "" };
+          const isWarn = ds.status === 'UNSAFE';
 
           return (
             <div key={f.id} className="flex flex-col">
@@ -237,7 +252,7 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
                     <div className="text-[13px] font-medium text-[#791F1F] mb-1">Safety alert</div>
                     <div className="text-[12px] text-[#791F1F] leading-[1.5] mb-3">{f.warnMsg}</div>
                     
-                    <div className="text-[11px] font-semibold text-[#791F1F] opacity-80 mb-1.5 tracking-[0.05em] uppercase">Corrective action required</div>
+                    <div className="text-[11px] font-semibold text-[#791F1F] opacity-80 mb-1.5 tracking-[0.05em] uppercase">Action Required: Temperature is out of range. Describe corrective steps (e.g., 'Moved stock').</div>
                     <textarea
                       placeholder="Describe what was done to fix this issue..."
                       value={ds.correctiveAction}
