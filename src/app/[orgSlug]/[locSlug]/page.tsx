@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { X, Delete, LogOut } from "lucide-react";
-import { StationForm, STATIONS, StationConfig } from "@/components/StationForm";
+import { X, Delete, LogOut, CheckCircle, AlertCircle } from "lucide-react";
+import { StationForm, StationConfig } from "@/components/StationForm";
 import PinPadModal from "@/components/PinPadModal";
 import { NotificationHandler } from "@/services/alertService";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +37,7 @@ export default function KioskPage() {
   const [loggedInStaff, setLoggedInStaff] = useState<Staff | null>(null);
 
   // Station State
+  const [stations, setStations] = useState<StationConfig[]>([]);
   const [selectedStation, setSelectedStation] = useState<StationConfig | null>(null);
   const [alerts, setAlerts] = useState<string[]>([]);
   const [deviceConfig, setDeviceConfig] = useState<{ location: string; stations: string[] } | null>(null);
@@ -81,6 +82,26 @@ export default function KioskPage() {
         });
       }
       setLiveStaff(combined.length > 0 ? combined : []);
+
+      // Fetch dynamic stations for this location
+      const { data: stationData, error: stationErr } = await supabase
+        .from('stations')
+        .select('*')
+        .eq('location_id', resolvedLocId)
+        .order('created_at', { ascending: true });
+
+      if (!stationErr && stationData) {
+        const dynamicStations: StationConfig[] = stationData.map(st => ({
+          id: st.id,
+          label: st.name,
+          icon: st.icon || "✓",
+          iconBg: "bg-[#f8f7f4]",
+          iconColor: "text-[#111110]",
+          desc: "Operating thresholds active",
+          fields: st.sop_config || []
+        }));
+        setStations(dynamicStations);
+      }
     };
     if (params.orgSlug && params.locSlug) {
       fetchStaff();
@@ -194,7 +215,7 @@ export default function KioskPage() {
             </div>
             
             <div className="grid gap-2.5">
-              {(deviceConfig ? STATIONS.filter((s) => deviceConfig.stations.includes(s.id)) : STATIONS).map((st) => (
+              {(deviceConfig ? stations.filter((s) => deviceConfig.stations.includes(s.id)) : stations).map((st) => (
                 <button
                   key={st.id}
                   onClick={() => handleStationClick(st)}

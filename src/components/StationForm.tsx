@@ -24,48 +24,7 @@ export type StationConfig = {
   fields: FieldConfig[];
 };
 
-export const STATIONS: StationConfig[] = [
-  {
-    id: "cold",
-    label: "Cold Storage",
-    icon: "❄",
-    iconBg: "bg-[#E6F1FB]",
-    iconColor: "text-[#245D91]",
-    desc: "Coolers, fridges & freezers",
-    fields: [
-      { id: "wic", label: "Walk-in cooler temperature", unit: "°C", type: "temp", min: null, max: 4, warnMsg: "Temperature above 4°C — cold chain breach risk." },
-      { id: "pct", label: "Prep cooler temperature", unit: "°C", type: "temp", min: null, max: 4, warnMsg: "Temperature above 4°C — food safety concern." },
-      { id: "mft", label: "Milk fridge temperature", unit: "°C", type: "temp", min: null, max: 4, warnMsg: "Temperature above 4°C — dairy spoilage risk." },
-      { id: "fzt", label: "Freezer temperature", unit: "°C", type: "temp", min: null, max: -15, warnMsg: "Temperature above -15°C — freezer not holding safe temp." },
-    ],
-  },
-  {
-    id: "hot",
-    label: "Hot Holding",
-    icon: "🔥",
-    iconBg: "bg-[#FAEEDA]",
-    iconColor: "text-[#8C5D19]",
-    desc: "Steam tables & warmers",
-    fields: [
-      { id: "stt", label: "Steam table temperature", unit: "°C", type: "temp", min: 60, max: null, warnMsg: "Temperature below 60°C — bacterial growth zone." },
-      { id: "swt", label: "Soup warmer temperature", unit: "°C", type: "temp", min: 60, max: null, warnMsg: "Temperature below 60°C — holding conditions unsafe." },
-      { id: "hdt", label: "Holding drawer temperature", unit: "°C", type: "temp", min: 60, max: null, warnMsg: "Temperature below 60°C — food at risk." },
-    ],
-  },
-  {
-    id: "san",
-    label: "Sanitation & Chemicals",
-    icon: "✓",
-    iconBg: "bg-[#EAF3DE]",
-    iconColor: "text-[#3B6D11]",
-    desc: "Sanitizer & dishwasher",
-    fields: [
-      { id: "snc", label: "Sanitizer concentration", unit: "ppm", type: "ppm", min: 100, max: null, warnMsg: "Concentration below 100 ppm — sanitizer may be ineffective." },
-      { id: "drt", label: "Dishwasher rinse temperature", unit: "°C", type: "temp", min: 71, max: null, warnMsg: "Rinse temp below 71°C — dishes not properly sanitized." },
-      { id: "stp", label: "Surface test passed", unit: "", type: "pass", min: null, max: null, warnMsg: "Surface test failed — re-sanitize and retest required." },
-    ],
-  },
-];
+
 
 type FieldState = {
   value: string | boolean | null;

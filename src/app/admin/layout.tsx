@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, Users, Loader2, LogOut, MapPin } from "lucide-react";
+import { LayoutDashboard, Users, Loader2, LogOut, MapPin, Thermometer } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/locations", label: "Locations", icon: MapPin },
+    { href: "/admin/stations", label: "Stations", icon: Thermometer },
     { href: "/admin/staff", label: "Staff", icon: Users },
   ];
 
