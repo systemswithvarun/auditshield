@@ -11,6 +11,7 @@ type Schedule = {
   id: string;
   window_start: string;
   window_end: string;
+  grace_period_minutes: number;
   station: Station;
 };
 
@@ -30,6 +31,7 @@ export default function ScheduleManager() {
   const [newStationId, setNewStationId] = useState("");
   const [newStart, setNewStart] = useState("08:00");
   const [newEnd, setNewEnd] = useState("12:00");
+  const [newGrace, setNewGrace] = useState("15");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function ScheduleManager() {
       const { data: scData } = await supabase
         .from("schedules")
         .select(`
-          id, window_start, window_end,
+          id, window_start, window_end, grace_period_minutes,
           station:stations!inner(id, name, location_id)
         `)
         .eq("stations.location_id", activeLocation)
@@ -119,12 +121,14 @@ export default function ScheduleManager() {
     setError("");
 
     try {
+      const graceInt = parseInt(newGrace) || 15;
       const { error: insertErr } = await supabase
         .from("schedules")
         .insert([{
           station_id: newStationId,
           window_start: newStart,
-          window_end: newEnd
+          window_end: newEnd,
+          grace_period_minutes: graceInt
         }]);
 
       if (insertErr) throw insertErr;
@@ -208,7 +212,7 @@ export default function ScheduleManager() {
             <Plus size={18} /> New Schedule Binding
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
             <div>
               <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Target Station</label>
               <select 
@@ -234,6 +238,16 @@ export default function ScheduleManager() {
                 type="time" 
                 value={newEnd}
                 onChange={e => setNewEnd(e.target.value)}
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Grace Period (Mins)</label>
+              <input 
+                type="number" 
+                min="0"
+                value={newGrace}
+                onChange={e => setNewGrace(e.target.value)}
                 className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none font-mono"
               />
             </div>
@@ -289,7 +303,8 @@ export default function ScheduleManager() {
                      <div>
                        <div className="font-bold text-[15px]">{sc.station.name}</div>
                        <div className="text-[13px] text-[#6b6b67] font-mono mt-0.5 font-medium">
-                         {formatTime(sc.window_start)} - {formatTime(sc.window_end)}
+                         {formatTime(sc.window_start)} - {formatTime(sc.window_end)} 
+                         <span className="text-[#a8a8a4] ml-2 px-1.5 py-0.5 bg-[#f8f7f4] rounded text-[11px] uppercase tracking-wide">+{sc.grace_period_minutes}m grace</span>
                        </div>
                      </div>
                   </div>

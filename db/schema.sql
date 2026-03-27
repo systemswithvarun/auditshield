@@ -66,6 +66,7 @@ CREATE TABLE schedules (
     station_id UUID REFERENCES stations(id) ON DELETE CASCADE,
     window_start TIME NOT NULL, -- e.g., '08:00'
     window_end TIME NOT NULL, -- e.g., '12:00'
+    grace_period_minutes INTEGER DEFAULT 15,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -77,7 +78,8 @@ CREATE TABLE schedule_instances (
     target_date DATE NOT NULL,
     window_start TIME NOT NULL,
     window_end TIME NOT NULL,
-    status TEXT DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'MISSED'
+    grace_period_minutes INTEGER DEFAULT 15,
+    status TEXT DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'LATE', 'MISSED'
     completed_log_id UUID REFERENCES logs(id), -- Nullable
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(schedule_id, target_date)
@@ -87,13 +89,14 @@ CREATE TABLE schedule_instances (
 CREATE OR REPLACE FUNCTION generate_daily_schedules()
 RETURNS void AS $$
 BEGIN
-  INSERT INTO schedule_instances (schedule_id, station_id, target_date, window_start, window_end, status)
+  INSERT INTO schedule_instances (schedule_id, station_id, target_date, window_start, window_end, grace_period_minutes, status)
   SELECT 
     id AS schedule_id,
     station_id,
     CURRENT_DATE AS target_date,
     window_start,
     window_end,
+    grace_period_minutes,
     'PENDING'
   FROM schedules
   ON CONFLICT (schedule_id, target_date) DO NOTHING;

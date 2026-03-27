@@ -154,17 +154,46 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
       // Attempt to automatically resolve active schedule instances
       if (logData) {
         try {
-          const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
           const todayStr = new Date().toISOString().split('T')[0];
-
-          await supabase
+          
+          const { data: pendingInst } = await supabase
             .from('schedule_instances')
-            .update({ status: 'COMPLETED', completed_log_id: logData.id })
+            .select('id, window_start, window_end, grace_period_minutes')
             .eq('station_id', station.id)
             .eq('target_date', todayStr)
             .eq('status', 'PENDING')
-            .lte('window_start', nowTimeStr)
-            .gte('window_end', nowTimeStr);
+            .maybeSingle();
+
+          if (pendingInst) {
+             const now = new Date();
+             const dStart = new Date(`${todayStr}T${pendingInst.window_start}`);
+             const dEnd = new Date(`${todayStr}T${pendingInst.window_end}`);
+             const graceMins = pendingInst.grace_period_minutes || 15;
+             const dGrace = new Date(dEnd.getTime() + (graceMins * 60000));
+
+             if (now >= dStart) {
+                 let mappedStatus = 'PENDING';
+                 if (now <= dEnd) {
+                     mappedStatus = 'COMPLETED';
+                 } else if (now <= dGrace) {
+                     mappedStatus = 'LATE';
+                 } else {
+                     mappedStatus = 'MISSED';
+                 }
+                 
+                 if (mappedStatus === 'COMPLETED' || mappedStatus === 'LATE') {
+                    await supabase
+                      .from('schedule_instances')
+                      .update({ status: mappedStatus, completed_log_id: logData.id })
+                      .eq('id', pendingInst.id);
+                 } else if (mappedStatus === 'MISSED') {
+                    await supabase
+                      .from('schedule_instances')
+                      .update({ status: 'MISSED' })
+                      .eq('id', pendingInst.id);
+                 }
+             }
+          }
         } catch (scheduleErr) {
           console.warn("Failed to update active schedule instance:", scheduleErr);
         }

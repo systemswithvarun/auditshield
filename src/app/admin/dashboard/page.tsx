@@ -15,6 +15,7 @@ type ScheduleInstance = {
   station_id: string;
   window_start: string;
   window_end: string;
+  grace_period_minutes: number;
   status: string;
   stations: { name: string };
 };
@@ -44,6 +45,7 @@ export default function OperationalDashboard() {
   const [criticalAlerts, setCriticalAlerts] = useState<LogRecord[]>([]);
   const [recentLogs, setRecentLogs] = useState<LogRecord[]>([]);
   const [schedulesToday, setSchedulesToday] = useState<ScheduleInstance[]>([]);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   
   // Filter states
   const todayStr = new Date().toISOString().split('T')[0];
@@ -170,7 +172,7 @@ export default function OperationalDashboard() {
         const { data: pulseData } = await supabase
           .from("schedule_instances")
           .select(`
-            id, station_id, window_start, window_end, status,
+            id, station_id, window_start, window_end, grace_period_minutes, status,
             stations!inner(name, location_id)
           `)
           .eq("stations.location_id", activeLocation)
@@ -269,8 +271,49 @@ export default function OperationalDashboard() {
     );
   }
 
+  // Precompute global Missed triggers natively validating grace spans
+  const activeMissesCount = schedulesToday.filter(
+    (sc) => {
+       if (sc.status === 'MISSED') return true;
+       if (sc.status === 'PENDING') {
+          const now = new Date();
+          const dEnd = new Date(`${todayStr}T${sc.window_end}`);
+          const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
+          return now > dGrace;
+       }
+       return false;
+    }
+  ).length;
+
   return (
     <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#111110]">
+      
+      {/* Real-time Triage Banner */}
+      {!bannerDismissed && activeMissesCount > 0 && (
+         <div className="mb-8 bg-[#E24B4A] text-white rounded-2xl p-5 sm:p-6 shadow-[0_8px_30px_rgba(226,75,74,0.3)] relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                    <AlertTriangle size={24} strokeWidth={2.5} className="text-white" />
+                 </div>
+                 <div>
+                    <h2 className="text-[18px] font-bold tracking-tight mb-1">Warning: Scheduled Compliance Missed</h2>
+                    <p className="text-[14px] text-white/90 font-medium max-w-xl leading-relaxed">
+                       {activeMissesCount} active {activeMissesCount === 1 ? 'station' : 'stations'} at <strong>{locations.find(l => l.id === activeLocation)?.name}</strong> failed to log temperatures inside their mandatory operational window natively. Review parameters immediately.
+                    </p>
+                 </div>
+              </div>
+              
+              <button 
+                 onClick={() => setBannerDismissed(true)}
+                 className="h-10 px-5 bg-white text-[#E24B4A] hover:bg-[#fffcfc] rounded-xl text-[14px] font-bold tracking-wide transition-colors shrink-0 shadow-sm"
+              >
+                 Acknowledge Alert
+              </button>
+           </div>
+         </div>
+      )}
       
       {/* Header & Global Filters */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
@@ -318,8 +361,11 @@ export default function OperationalDashboard() {
                      const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
                      let displayStatus = sc.status;
                      
-                     // Compute strict MISSED check
-                     if (sc.status === 'PENDING' && sc.window_end < nowTimeStr) {
+                     const now = new Date();
+                     const dEnd = new Date(`${todayStr}T${sc.window_end}`);
+                     const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
+                     
+                     if (sc.status === 'PENDING' && now > dGrace) {
                         displayStatus = 'MISSED';
                      }
 
@@ -329,6 +375,7 @@ export default function OperationalDashboard() {
                             <div className="font-bold text-[14px]">{sc.stations?.name}</div>
                             <div className="text-[12px] text-[#888] font-mono mt-0.5">
                               {sc.window_start.substring(0,5)} - {sc.window_end.substring(0,5)}
+                              <span className="ml-1 opacity-50">(+{sc.grace_period_minutes || 15}m tag)</span>
                             </div>
                          </div>
                          <div>
@@ -338,9 +385,15 @@ export default function OperationalDashboard() {
                                 Safe
                              </span>
                            )}
+                           {displayStatus === 'LATE' && (
+                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#AF5B00] bg-[#FFF8EB] border border-[#F2C17D] px-2 py-0.5 rounded-md">
+                                <Clock size={12} strokeWidth={3} />
+                                Late
+                             </span>
+                           )}
                            {displayStatus === 'PENDING' && (
                              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6b6b67] bg-[#f5f4f0] border border-black/10 px-2 py-0.5 rounded-md">
-                                <Clock size={12} strokeWidth={3} />
+                                <Activity size={12} strokeWidth={3} />
                                 Operating
                              </span>
                            )}
