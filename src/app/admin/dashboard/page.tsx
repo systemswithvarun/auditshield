@@ -50,6 +50,7 @@ export default function OperationalDashboard() {
   
   // Filter states
   const todayStr = new Date().toISOString().split('T')[0];
+  const [filterPreset, setFilterPreset] = useState<'TODAY'|'WEEK'|'CUSTOM'>('TODAY');
   const [filterDate, setFilterDate] = useState(todayStr);
   const [filterStation, setFilterStation] = useState("");
   const [filterStaff, setFilterStaff] = useState("");
@@ -191,16 +192,55 @@ export default function OperationalDashboard() {
     fetchDashboardData();
   }, [activeLocation]);
 
-  // 3. Dynamic Filtering Logic for "All Logs" Table
+  // 3. Automated 60s Polling for Compliance Pulse 
+  // Runs silently in background grabbing live instance updates without blocking UI maps
+  useEffect(() => {
+    if (!activeLocation) return;
+    
+    const fetchPulseSilently = async () => {
+       try {
+          const now = new Date();
+          const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+          const { data: pulseData } = await supabase
+            .from("schedule_instances")
+            .select(`
+              id, station_id, window_start, window_end, grace_period_minutes, status,
+              stations!inner(name, location_id)
+            `)
+            .eq("stations.location_id", activeLocation)
+            .eq("target_date", startOfToday.split('T')[0]);
+          
+          if (pulseData) setSchedulesToday(pulseData as any[]);
+       } catch (err) {
+          console.error("Silent 60s polling failed to map schedules natively.", err);
+       }
+    };
+
+    const intervalId = setInterval(fetchPulseSilently, 60000);
+    return () => clearInterval(intervalId);
+  }, [activeLocation]);
+
+  // 4. Dynamic Filtering Logic for "All Logs" Table
   useEffect(() => {
     if (!activeLocation || !filterDate) return;
 
     const fetchFiltered = async () => {
       setIsFiltering(true);
       try {
-        // Build start/end bounds for the selected date
-        const startDate = new Date(filterDate);
-        const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+        let startDate: Date;
+        let endDate: Date;
+        const now = new Date();
+
+        if (filterPreset === 'TODAY') {
+           startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+           endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+        } else if (filterPreset === 'WEEK') {
+           startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+           endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        } else {
+           startDate = new Date(filterDate);
+           endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+        }
 
         let query = supabase
           .from("logs")
@@ -227,7 +267,7 @@ export default function OperationalDashboard() {
     };
 
     fetchFiltered();
-  }, [activeLocation, filterDate, filterStation, filterStaff]);
+  }, [activeLocation, filterPreset, filterDate, filterStation, filterStaff]);
 
 
   // Derived View: Station Statuses for 'Today View'
@@ -303,14 +343,34 @@ export default function OperationalDashboard() {
     }
   ).length;
 
-  // Precompute Progress Bar metrics
-  const completedCount = schedulesToday.filter(s => s.status === 'COMPLETED' || s.status === 'LATE').length;
-  const totalSchedulesCount = schedulesToday.length;
-  const progressPercent = totalSchedulesCount === 0 ? 0 : Math.round((completedCount / totalSchedulesCount) * 100);
-  
-  let progressColor = "bg-[#E24B4A]"; // red < 50
-  if (progressPercent > 50 && progressPercent < 90) progressColor = "bg-[#E28800]"; // yellow
-  if (progressPercent >= 90) progressColor = "bg-[#3B6D11]"; // green
+  // Derived Global Status KPI Header
+  const globalKPI = useMemo(() => {
+     if (schedulesToday.length === 0) return { label: 'Awaiting Targets', color: 'bg-[#f5f4f0] text-[#6b6b67] border-black/10', icon: <Activity size={24} /> };
+     if (schedulesToday.some(s => s.status === 'MISSED')) {
+        return { label: 'Critical Misses Detected', color: 'bg-[#FFF4F4] text-[#E24B4A] border-[#F09595]', icon: <AlertTriangle size={24} strokeWidth={2.5} /> };
+     }
+     if (schedulesToday.some(s => s.status === 'PENDING')) {
+        return { label: 'Checks Pending', color: 'bg-[#FFF8EB] text-[#AF5B00] border-[#F2C17D]', icon: <Clock size={24} strokeWidth={2.5} /> };
+     }
+     return { label: '100% Compliant', color: 'bg-[#EAF3DE] text-[#3B6D11] border-[#97C459]', icon: <CheckCircle size={24} strokeWidth={2.5} /> };
+  }, [schedulesToday]);
+
+  // Group schedules natively for Compliance Checklist widget
+  const schedulesByStation = useMemo(() => {
+     const grouped: Record<string, { stationName: string, schedules: ScheduleInstance[] }> = {};
+     schedulesToday.forEach(sc => {
+        if (!grouped[sc.station_id]) {
+           grouped[sc.station_id] = { stationName: sc.stations?.name || 'Unknown', schedules: [] };
+        }
+        grouped[sc.station_id].schedules.push(sc);
+     });
+     
+     // Chronological Sort overriding native DB mapping
+     Object.values(grouped).forEach(g => {
+        g.schedules.sort((a,b) => a.window_start.localeCompare(b.window_start));
+     });
+     return Object.values(grouped);
+  }, [schedulesToday]);
 
   return (
     <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#111110]">
@@ -343,26 +403,34 @@ export default function OperationalDashboard() {
       )}
       
       {/* Header & Global Filters */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
-        <div>
-          <h1 className="text-[28px] font-bold tracking-tight mb-1">Operational Control</h1>
-          <p className="text-[#6b6b67] text-[15px]">{org?.name} • Live Fleet Status</p>
-        </div>
-        
-        {locations.length > 0 && (
-          <div className="flex items-center gap-2 bg-white border border-black/10 rounded-xl p-1.5 shadow-sm w-fit">
-            <MapPin size={16} className="text-[#888] ml-2" />
-            <select
-              value={activeLocation}
-              onChange={(e) => setActiveLocation(e.target.value)}
-              className="bg-transparent text-[14px] font-medium outline-none pr-3 cursor-pointer"
-            >
-              {locations.map(loc => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
-              ))}
-            </select>
+      <div className="flex flex-col mb-8 gap-5">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
+          <div>
+            <h1 className="text-[28px] font-bold tracking-tight mb-1">Operational Control</h1>
+            <p className="text-[#6b6b67] text-[15px]">{org?.name} • Live Fleet Status</p>
           </div>
-        )}
+          
+          {locations.length > 0 && (
+            <div className="flex items-center gap-2 bg-white border border-black/10 rounded-xl p-1.5 shadow-sm w-fit">
+              <MapPin size={16} className="text-[#888] ml-2" />
+              <select
+                value={activeLocation}
+                onChange={(e) => setActiveLocation(e.target.value)}
+                className="bg-transparent text-[14px] font-medium outline-none pr-3 cursor-pointer"
+              >
+                {locations.map(loc => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Global KPI Banner */}
+        <div className={`border rounded-2xl p-6 shadow-sm flex items-center justify-center gap-4 transition-colors duration-500 ${globalKPI.color}`}>
+           <span className="shrink-0">{globalKPI.icon}</span>
+           <span className="text-[24px] tracking-tight font-extrabold">{globalKPI.label}</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -370,99 +438,59 @@ export default function OperationalDashboard() {
         {/* Left Column: Pulse & Today View */}
         <div className="lg:col-span-2 flex flex-col gap-6">
 
-          {/* Compliance Pulse */}
+          {/* Compliance Checklist Grouped View */}
           <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
             <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
               <BarChart3 size={18} className="text-[#97C459]" />
-              Daily Compliance Pulse
+              Compliance Checklist
             </h2>
             
-            {/* Progress Bar */}
-            <div className="mb-6">
-              <div className="flex justify-between items-end mb-2">
-                 <span className="text-[13px] font-bold text-[#6b6b67] uppercase tracking-wider">Completion Rate</span>
-                 <span className="text-[20px] font-bold tracking-tight">{progressPercent}%</span>
-              </div>
-              <div className="w-full h-3 bg-[#f5f4f0] rounded-full overflow-hidden flex">
-                 <div 
-                   className={`h-full ${progressColor} transition-all duration-1000 ease-out`} 
-                   style={{ width: `${progressPercent}%` }}
-                 />
-              </div>
-            </div>
-            
             <div className="flex flex-col gap-4">
-               {schedulesToday.length === 0 ? (
+               {schedulesByStation.length === 0 ? (
                  <div className="text-[13px] text-[#888] font-medium py-2">
-                   No compliance schedules mapped for today. Configure windows in Schedules module.
+                   No schedules configured for today.
                  </div>
                ) : (
-                 <div className="overflow-x-auto relative rounded-xl border border-black/10">
-                   <table className="w-full text-left border-collapse text-[13px]">
-                     <thead>
-                       <tr className="bg-[#fcfbf9] border-b border-black/10">
-                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3">Station</th>
-                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3">Time Window</th>
-                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3">Status</th>
-                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3 text-right">Action</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {schedulesToday.map(sc => {
-                         let displayStatus = sc.status;
-                         
-                         const now = new Date();
-                         const dEnd = new Date(`${todayStr}T${sc.window_end}`);
-                         const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
-                         
-                         if (sc.status === 'PENDING' && now > dGrace) {
-                            displayStatus = 'MISSED';
-                         }
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {schedulesByStation.map(group => (
+                       <div key={group.stationName} className="border border-black/10 rounded-xl overflow-hidden bg-[#fcfbf9]">
+                          <div className="bg-black/[0.03] border-b border-black/5 px-4 py-2 font-bold text-[14px] flex items-center justify-between">
+                             {group.stationName}
+                             <span className="text-[11px] font-medium opacity-60 bg-black/5 px-2 py-0.5 rounded-full">{group.schedules.length} logs expected</span>
+                          </div>
+                          
+                          <div className="flex flex-col p-2 space-y-1">
+                             {group.schedules.map(sc => {
+                                let icon = <span className="w-2.5 h-2.5 rounded-full bg-[#ccc]"></span>; // Pending Default (White/Gray)
+                                let textColor = "text-[#6b6b67]";
+                                
+                                if (sc.status === 'COMPLETED') {
+                                   icon = <span className="w-2.5 h-2.5 rounded-full bg-[#97C459] shadow-[0_0_8px_#97C459]"></span>; // Green
+                                   textColor = "text-[#3B6D11] font-bold";
+                                } else if (sc.status === 'LATE' || sc.status === 'PENDING') {
+                                   // We highlight yellow for PENDING effectively identifying something we're waiting on! LATE is also yellow/orange.
+                                   icon = <span className="w-2.5 h-2.5 rounded-full bg-[#F2C17D] shadow-[0_0_8px_#F2C17D]"></span>; // Yellow
+                                   textColor = "text-[#AF5B00] font-bold";
+                                } else if (sc.status === 'MISSED') {
+                                   icon = <span className="w-2.5 h-2.5 rounded-full bg-[#E24B4A] shadow-[0_0_8px_#E24B4A]"></span>; // Red
+                                   textColor = "text-[#E24B4A] font-bold";
+                                }
 
-                         // Action routing link
-                         const kioskHref = org ? `/${org.id}/${activeLocation}` : '#';
-
-                         return (
-                           <tr key={sc.id} className="border-b border-black/5 last:border-0 hover:bg-[#f8f7f4] transition-colors">
-                             <td className="px-4 py-3 font-bold text-[#111]">{sc.stations?.name}</td>
-                             <td className="px-4 py-3 text-[#888] font-mono whitespace-nowrap">
-                                {sc.window_start.substring(0,5)} - {sc.window_end.substring(0,5)}
-                                <span className="ml-1 opacity-50 text-[10px] uppercase">(+{sc.grace_period_minutes || 15}m)</span>
-                             </td>
-                             <td className="px-4 py-3">
-                               {displayStatus === 'COMPLETED' && (
-                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] border border-[#97C459] px-2 py-0.5 rounded-md">
-                                    <CheckCircle size={10} strokeWidth={3} /> Safe
-                                 </span>
-                               )}
-                               {displayStatus === 'LATE' && (
-                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#AF5B00] bg-[#FFF8EB] border border-[#F2C17D] px-2 py-0.5 rounded-md">
-                                    <Clock size={10} strokeWidth={3} /> Late
-                                 </span>
-                               )}
-                               {displayStatus === 'PENDING' && (
-                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6b6b67] bg-[#f5f4f0] border border-black/10 px-2 py-0.5 rounded-md">
-                                    <Activity size={10} strokeWidth={3} /> PENDING
-                                 </span>
-                               )}
-                               {displayStatus === 'MISSED' && (
-                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#E24B4A] bg-[#FFF4F4] border border-[#F09595] px-2 py-0.5 rounded-md">
-                                    <AlertTriangle size={10} strokeWidth={3} /> Missed
-                                 </span>
-                               )}
-                             </td>
-                             <td className="px-4 py-3 text-right">
-                                {displayStatus === 'PENDING' ? (
-                                   <Link href={kioskHref} className="text-[#245D91] hover:underline font-bold text-[12px]">Go to Kiosk &rarr;</Link>
-                                ) : (
-                                   <span className="text-[#ccc] text-[12px] font-medium">—</span>
-                                )}
-                             </td>
-                           </tr>
-                         );
-                       })}
-                     </tbody>
-                   </table>
+                                return (
+                                   <div key={sc.id} className="flex items-center justify-between hover:bg-black/5 transition-colors p-2 rounded-lg cursor-default">
+                                      <div className="flex items-center gap-3">
+                                         {icon}
+                                         <span className="text-[13px] font-mono text-[#444]">{sc.window_start.substring(0,5)} - {sc.window_end.substring(0,5)}</span>
+                                      </div>
+                                      <span className={`text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-md ${textColor}`}>
+                                         {sc.status}
+                                      </span>
+                                   </div>
+                                )
+                             })}
+                          </div>
+                       </div>
+                    ))}
                  </div>
                )}
             </div>
@@ -609,15 +637,40 @@ export default function OperationalDashboard() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center bg-white border border-black/15 rounded-lg overflow-hidden h-9 shadow-sm">
-              <div className="px-3 text-[#888] bg-[#f8f7f4] border-r border-black/10 h-full flex items-center"><Calendar size={14} /></div>
-              <input 
-                type="date" 
-                value={filterDate} 
-                onChange={e => setFilterDate(e.target.value)}
-                className="text-[13px] px-3 h-full outline-none font-medium text-[#111]"
-              />
+             {/* Presets Button Group */}
+            <div className="flex bg-[#fcfbf9] border border-black/15 items-center rounded-lg overflow-hidden h-9 shadow-sm p-1">
+               <button 
+                  onClick={() => setFilterPreset('TODAY')} 
+                  className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'TODAY' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
+               >
+                  Today
+               </button>
+               <button 
+                  onClick={() => setFilterPreset('WEEK')} 
+                  className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'WEEK' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
+               >
+                  This Week
+               </button>
+               <button 
+                  onClick={() => setFilterPreset('CUSTOM')} 
+                  className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'CUSTOM' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
+               >
+                  Custom
+               </button>
             </div>
+
+            {filterPreset === 'CUSTOM' && (
+               <div className="flex items-center bg-white border border-black/15 rounded-lg overflow-hidden h-9 shadow-sm animate-in fade-in slide-in-from-right-4 duration-300">
+                 <div className="px-3 text-[#888] bg-[#f8f7f4] border-r border-black/10 h-full flex items-center"><Calendar size={14} /></div>
+                 <input 
+                   type="date" 
+                   max={todayStr}
+                   value={filterDate} 
+                   onChange={e => setFilterDate(e.target.value)}
+                   className="text-[13px] px-3 h-full outline-none font-medium text-[#111]"
+                 />
+               </div>
+            )}
 
             <select 
               value={filterStation} 
