@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertTriangle, CheckCircle, Clock, Calendar, Filter, Printer, AlertCircle as AlertCircleIcon, MapPin, Activity, FileText, BarChart3, Search } from "lucide-react";
 
@@ -285,6 +286,15 @@ export default function OperationalDashboard() {
     }
   ).length;
 
+  // Precompute Progress Bar metrics
+  const completedCount = schedulesToday.filter(s => s.status === 'COMPLETED' || s.status === 'LATE').length;
+  const totalSchedulesCount = schedulesToday.length;
+  const progressPercent = totalSchedulesCount === 0 ? 0 : Math.round((completedCount / totalSchedulesCount) * 100);
+  
+  let progressColor = "bg-[#E24B4A]"; // red < 50
+  if (progressPercent > 50 && progressPercent < 90) progressColor = "bg-[#E28800]"; // yellow
+  if (progressPercent >= 90) progressColor = "bg-[#3B6D11]"; // green
+
   return (
     <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#111110]">
       
@@ -347,8 +357,22 @@ export default function OperationalDashboard() {
           <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
             <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
               <BarChart3 size={18} className="text-[#97C459]" />
-              Dialy Compliance Pulse
+              Daily Compliance Pulse
             </h2>
+            
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <div className="flex justify-between items-end mb-2">
+                 <span className="text-[13px] font-bold text-[#6b6b67] uppercase tracking-wider">Completion Rate</span>
+                 <span className="text-[20px] font-bold tracking-tight">{progressPercent}%</span>
+              </div>
+              <div className="w-full h-3 bg-[#f5f4f0] rounded-full overflow-hidden flex">
+                 <div 
+                   className={`h-full ${progressColor} transition-all duration-1000 ease-out`} 
+                   style={{ width: `${progressPercent}%` }}
+                 />
+              </div>
+            </div>
             
             <div className="flex flex-col gap-4">
                {schedulesToday.length === 0 ? (
@@ -356,57 +380,72 @@ export default function OperationalDashboard() {
                    No compliance schedules mapped for today. Configure windows in Schedules module.
                  </div>
                ) : (
-                 <div className="space-y-3">
-                   {schedulesToday.map(sc => {
-                     const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-                     let displayStatus = sc.status;
-                     
-                     const now = new Date();
-                     const dEnd = new Date(`${todayStr}T${sc.window_end}`);
-                     const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
-                     
-                     if (sc.status === 'PENDING' && now > dGrace) {
-                        displayStatus = 'MISSED';
-                     }
+                 <div className="overflow-x-auto relative rounded-xl border border-black/10">
+                   <table className="w-full text-left border-collapse text-[13px]">
+                     <thead>
+                       <tr className="bg-[#fcfbf9] border-b border-black/10">
+                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3">Station</th>
+                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3">Time Window</th>
+                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3">Status</th>
+                         <th className="font-bold text-[#888] uppercase tracking-wider px-4 py-3 text-right">Action</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {schedulesToday.map(sc => {
+                         let displayStatus = sc.status;
+                         
+                         const now = new Date();
+                         const dEnd = new Date(`${todayStr}T${sc.window_end}`);
+                         const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
+                         
+                         if (sc.status === 'PENDING' && now > dGrace) {
+                            displayStatus = 'MISSED';
+                         }
 
-                     return (
-                       <div key={sc.id} className="flex items-center justify-between border-b border-black/5 pb-3 last:border-0 last:pb-0">
-                         <div>
-                            <div className="font-bold text-[14px]">{sc.stations?.name}</div>
-                            <div className="text-[12px] text-[#888] font-mono mt-0.5">
-                              {sc.window_start.substring(0,5)} - {sc.window_end.substring(0,5)}
-                              <span className="ml-1 opacity-50">(+{sc.grace_period_minutes || 15}m tag)</span>
-                            </div>
-                         </div>
-                         <div>
-                           {displayStatus === 'COMPLETED' && (
-                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] border border-[#97C459] px-2 py-0.5 rounded-md">
-                                <CheckCircle size={12} strokeWidth={3} />
-                                Safe
-                             </span>
-                           )}
-                           {displayStatus === 'LATE' && (
-                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#AF5B00] bg-[#FFF8EB] border border-[#F2C17D] px-2 py-0.5 rounded-md">
-                                <Clock size={12} strokeWidth={3} />
-                                Late
-                             </span>
-                           )}
-                           {displayStatus === 'PENDING' && (
-                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6b6b67] bg-[#f5f4f0] border border-black/10 px-2 py-0.5 rounded-md">
-                                <Activity size={12} strokeWidth={3} />
-                                Operating
-                             </span>
-                           )}
-                           {displayStatus === 'MISSED' && (
-                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#E24B4A] bg-[#FFF4F4] border border-[#F09595] px-2 py-0.5 rounded-md">
-                                <AlertTriangle size={12} strokeWidth={3} />
-                                Missed
-                             </span>
-                           )}
-                         </div>
-                       </div>
-                     );
-                   })}
+                         // Action routing link
+                         const kioskHref = org ? `/${org.id}/${activeLocation}` : '#';
+
+                         return (
+                           <tr key={sc.id} className="border-b border-black/5 last:border-0 hover:bg-[#f8f7f4] transition-colors">
+                             <td className="px-4 py-3 font-bold text-[#111]">{sc.stations?.name}</td>
+                             <td className="px-4 py-3 text-[#888] font-mono whitespace-nowrap">
+                                {sc.window_start.substring(0,5)} - {sc.window_end.substring(0,5)}
+                                <span className="ml-1 opacity-50 text-[10px] uppercase">(+{sc.grace_period_minutes || 15}m)</span>
+                             </td>
+                             <td className="px-4 py-3">
+                               {displayStatus === 'COMPLETED' && (
+                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] border border-[#97C459] px-2 py-0.5 rounded-md">
+                                    <CheckCircle size={10} strokeWidth={3} /> Safe
+                                 </span>
+                               )}
+                               {displayStatus === 'LATE' && (
+                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#AF5B00] bg-[#FFF8EB] border border-[#F2C17D] px-2 py-0.5 rounded-md">
+                                    <Clock size={10} strokeWidth={3} /> Late
+                                 </span>
+                               )}
+                               {displayStatus === 'PENDING' && (
+                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6b6b67] bg-[#f5f4f0] border border-black/10 px-2 py-0.5 rounded-md">
+                                    <Activity size={10} strokeWidth={3} /> PENDING
+                                 </span>
+                               )}
+                               {displayStatus === 'MISSED' && (
+                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#E24B4A] bg-[#FFF4F4] border border-[#F09595] px-2 py-0.5 rounded-md">
+                                    <AlertTriangle size={10} strokeWidth={3} /> Missed
+                                 </span>
+                               )}
+                             </td>
+                             <td className="px-4 py-3 text-right">
+                                {displayStatus === 'PENDING' ? (
+                                   <Link href={kioskHref} className="text-[#245D91] hover:underline font-bold text-[12px]">Go to Kiosk &rarr;</Link>
+                                ) : (
+                                   <span className="text-[#ccc] text-[12px] font-medium">—</span>
+                                )}
+                             </td>
+                           </tr>
+                         );
+                       })}
+                     </tbody>
+                   </table>
                  </div>
                )}
             </div>
