@@ -233,12 +233,29 @@ export default function OperationalDashboard() {
   // Derived View: Station Statuses for 'Today View'
   const stationStatuses = useMemo(() => {
     return stations.map(station => {
-      const logsForStation = todayLogs.filter(l => l.stations.id === station.id);
+      const logsForStation = todayLogs.filter(l => l.stations?.id === station.id);
       
-      let status: "PENDING" | "SAFE" | "BREACH" = "PENDING";
+      let status: "PENDING" | "SAFE" | "BREACH" | "DUE_SOON" = "PENDING";
       
       if (logsForStation.length > 0) {
         status = logsForStation.some(l => l.is_breach) ? "BREACH" : "SAFE";
+      }
+
+      if (status === 'PENDING') {
+         const now = new Date();
+         const todayStr = new Date().toISOString().split('T')[0];
+         const pendingSchedules = schedulesToday.filter(s => s.station_id === station.id && s.status === 'PENDING');
+         for (const s of pendingSchedules) {
+            const dStart = new Date(`${todayStr}T${s.window_start}`);
+            const dStartMinus15 = new Date(dStart.getTime() - 15 * 60000);
+            const dEnd = new Date(`${todayStr}T${s.window_end}`);
+            
+            // Trigger Due Soon if we are 15m away or actively inside the window
+            if (now >= dStartMinus15 && now <= dEnd) {
+               status = "DUE_SOON";
+               break;
+            }
+         }
       }
 
       return {
@@ -247,7 +264,7 @@ export default function OperationalDashboard() {
         logCount: logsForStation.length
       };
     });
-  }, [stations, todayLogs]);
+  }, [stations, todayLogs, schedulesToday]);
 
   const handlePrintReport = () => {
     alert("PDF Compilation initiating... (To be implemented with a PDF engine)");
@@ -461,7 +478,7 @@ export default function OperationalDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {stationStatuses.map(st => (
                 <div key={st.id} className="p-4 border border-black/5 bg-[#fcfbf9] rounded-xl flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 ${st.status === 'DUE_SOON' ? 'text-[#AF5B00]' : ''}`}>
                     <span className="text-[18px]">{st.icon}</span>
                     <span className="font-semibold text-[14px] truncate">{st.name}</span>
                   </div>
@@ -470,6 +487,12 @@ export default function OperationalDashboard() {
                       <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#6b6b67] bg-black/5 px-2.5 py-1 rounded-md">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#888] shrink-0" />
                         Pending
+                      </span>
+                    )}
+                    {st.status === 'DUE_SOON' && (
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#AF5B00] bg-[#FFF8EB] border border-[#F2C17D] px-2.5 py-1 rounded-md animate-pulse">
+                        <Clock size={12} strokeWidth={3} />
+                        Due Soon
                       </span>
                     )}
                     {st.status === 'SAFE' && (

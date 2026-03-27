@@ -19,17 +19,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Find all PENDING schedule instances for today where window_end < NOW
-    // Because edge functions run in UTC, we compare standard UTC time constraints or just fetch all and filter in memory based on timezone
-    // To simplify: we fetch all PENDING instances target_date = CURRENT_DATE
     const todayStr = new Date().toISOString().split('T')[0];
     
-    // Convert current time to a time string 'HH:MM:SS'
-    // Careful: Local vs UTC. Ideally we would just query all PENDING for today and map locally.
     const { data: pendingInstances, error: fetchErr } = await supabaseClient
       .from('schedule_instances')
       .select(`
-        id, station_id, window_end, target_date, status,
+        id, station_id, window_end, target_date, status, grace_period_minutes,
         stations (
           name,
           locations (
@@ -49,14 +44,21 @@ serve(async (req) => {
       });
     }
 
-    const nowStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
     const missedInstances = pendingInstances.filter((instance) => {
-       // If current 'HH:MM' is greater than window_end 'HH:MM', it's missed
-       return nowStr > instance.window_end;
+       const now = new Date(); // Deno executes in UTC
+       
+       // Parse the exact target time boundary mapped in UTC isolating Date blocks
+       const dEnd = new Date(`${instance.target_date}T${instance.window_end}Z`);
+       
+       // Execute grace calculations extracting integer minutes securely
+       const dGrace = new Date(dEnd.getTime() + ((instance.grace_period_minutes || 15) * 60000));
+       
+       // Compare mathematical spans
+       return now > dGrace;
     });
 
     if (missedInstances.length === 0) {
-      return new Response(JSON.stringify({ message: "No instances missed yet." }), {
+      return new Response(JSON.stringify({ message: "No instances missed yet passing grace thresholds." }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -93,22 +95,24 @@ serve(async (req) => {
         const emailAddress = authData.user.email;
         const stationName = stationObj.name || "Unknown Station";
         const locationName = locObj.name || "Unknown Location";
+        const closedTime = instance.window_end.substring(0, 5);
 
         const emailPayload = {
           from: "AuditShield Alerts <alerts@auditshield.app>",
           to: [emailAddress],
-          subject: `🚨 ALERT: Missed Food Safety Check - ${stationName}`,
+          subject: `🚨 AUDIT SHIELD ALERT: Missed Check - ${stationName}`,
           html: `
             <div style="font-family: sans-serif; padding: 20px; color: #111;">
-              <h2 style="color: #E24B4A; margin-top: 0;">Missed Check Alert</h2>
-              <p>The scheduled compliance check for <strong>${stationName}</strong> at <strong>${locationName}</strong> was missed.</p>
+              <h2 style="color: #E24B4A; margin-top: 0;">System 3 Metric Alert</h2>
+              <p>A scheduled safety check for <strong>${stationName}</strong> at <strong>${locationName}</strong> was missed. The window closed at <strong>${closedTime}</strong>.</p>
+              <p>Please review the dashboard immediately.</p>
               <p style="background: #f8f7f4; padding: 12px; border-radius: 8px;">
                  <strong>Target Date:</strong> ${instance.target_date}<br/>
-                 <strong>Window Ended At:</strong> ${instance.window_end.substring(0, 5)}
+                 <strong>Maximum Grace Extended:</strong> +${instance.grace_period_minutes}m
               </p>
-              <p>Please log in to the <a href="https://auditshield.app/admin/dashboard" style="color: #245D91; font-weight: bold;">Manager Dashboard</a> to review your compliance records.</p>
+              <p>Please log in to the <a href="https://auditshield.app/admin/dashboard" style="color: #245D91; font-weight: bold;">Manager Dashboard</a> to begin mitigation protocols.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-              <p style="font-size: 11px; color: #888;">This is an automated safety alert from AuditShield Compliance Systems.</p>
+              <p style="font-size: 11px; color: #888;">This is an automated System 3 safety alert from AuditShield Compliance Architecture.</p>
             </div>
           `
         };
@@ -129,7 +133,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({
-      message: "Successfully processed missed instances",
+      message: "Successfully processed missed instances bounded by Grace targets",
       count: missedInstances.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
