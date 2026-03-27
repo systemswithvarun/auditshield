@@ -30,7 +30,7 @@ export default function OnboardPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/admin/dashboard` }
+        options: { redirectTo: `${window.location.origin}/auth/callback` }
       });
       if (error) throw new Error(error.message);
     } catch (err: any) {
@@ -61,50 +61,25 @@ export default function OnboardPage() {
       const orgSlug = slugify(formData.businessName);
       const locSlug = slugify(formData.locationName);
 
-      // Step B: Insert into organizations with linked owner_id
-      console.log('User ID for Org:', ownerId);
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          owner_id: ownerId,
-          name: formData.businessName,
-          slug: orgSlug,
-        })
-        .select("id")
-        .single();
+      // Step B: Atomically initialize organization, location, and staff via RPC
+      console.log('Provisioning Workspace Atomically for User ID:', ownerId);
+      const { error: rpcError } = await supabase.rpc(
+        "initialize_new_organization",
+        {
+          p_owner_id: ownerId,
+          p_org_name: formData.businessName,
+          p_org_slug: orgSlug,
+          p_loc_name: formData.locationName,
+          p_loc_slug: locSlug,
+          p_admin_name: formData.adminName,
+          p_pin_code: formData.pin,
+        }
+      );
 
-      if (orgError) {
-        console.error("Organizations insert error:", orgError);
-        throw new Error(orgError.message || "Failed to create organization. Business name may be taken.");
+      if (rpcError) {
+        console.error("Workspace initialization error:", rpcError);
+        throw new Error(rpcError.message || "Failed to provision workspace. Your business name or PIN may be invalid.");
       }
-
-      // Step B: Insert into locations
-      const { data: locData, error: locError } = await supabase
-        .from("locations")
-        .insert({
-          organization_id: orgData.id,
-          name: formData.locationName,
-          slug: locSlug,
-        })
-        .select("id")
-        .single();
-
-      if (locError) {
-        throw new Error(locError.message || "Failed to create location.");
-      }
-
-      // Step C: Insert into staff
-      const { error: staffError } = await supabase
-        .from("staff")
-        .insert({
-          location_id: locData.id,
-          full_name: formData.adminName,
-          role: "Admin",
-          pin_code: formData.pin,
-          is_active: true
-        });
-
-      if (staffError) throw new Error(staffError.message || "Failed to register admin profile.");
 
       // Success -> navigate to Manager Dashboard
       router.push(`/admin/dashboard`);

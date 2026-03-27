@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertTriangle, CheckCircle, Clock, Calendar, Filter, Printer, AlertCircle as AlertCircleIcon, MapPin, Activity, FileText, BarChart3, Search } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Org = { id: string; name: string };
 type Location = { id: string; name: string };
@@ -56,6 +58,9 @@ export default function OperationalDashboard() {
   const [filterStaff, setFilterStaff] = useState("");
   const [filteredLogs, setFilteredLogs] = useState<LogRecord[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const pageSize = 50;
 
   // 1. Initial Identity & Locations Load
   useEffect(() => {
@@ -248,7 +253,7 @@ export default function OperationalDashboard() {
             id, created_at, is_breach, entry_data,
             staff!inner(id, full_name),
             stations!inner(id, name, icon)
-          `)
+          `, { count: 'exact' })
           .eq("stations.location_id", activeLocation)
           .gte("created_at", startDate.toISOString())
           .lt("created_at", endDate.toISOString())
@@ -257,8 +262,14 @@ export default function OperationalDashboard() {
         if (filterStation) query = query.eq("station_id", filterStation);
         if (filterStaff) query = query.eq("staff_id", filterStaff);
 
-        const { data } = await query;
+        // Limit results dynamically via range
+        const from = (currentPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+
+        const { data, count } = await query;
         setFilteredLogs((data as any[]) || []);
+        if (count !== null) setTotalLogs(count);
       } catch (e) {
         console.error("Filter error", e);
       } finally {
@@ -267,7 +278,7 @@ export default function OperationalDashboard() {
     };
 
     fetchFiltered();
-  }, [activeLocation, filterPreset, filterDate, filterStation, filterStaff]);
+  }, [activeLocation, filterPreset, filterDate, filterStation, filterStaff, currentPage]);
 
 
   // Derived View: Station Statuses for 'Today View'
@@ -307,7 +318,76 @@ export default function OperationalDashboard() {
   }, [stations, todayLogs, schedulesToday]);
 
   const handlePrintReport = () => {
-    alert("PDF Compilation initiating... (To be implemented with a PDF engine)");
+    try {
+      const doc = new jsPDF();
+      
+      // Header: Logo Text
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("AuditShield", 14, 20);
+      
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.text("Compliance Report", 14, 28);
+      
+      // Org Details
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Organization: ${org?.name || "N/A"}`, 14, 38);
+      const activeLocName = locations.find(l => l.id === activeLocation)?.name || "All Locations";
+      doc.text(`Location: ${activeLocName}`, 14, 43);
+
+      let dateRangeStr = "Today";
+      if (filterPreset === 'WEEK') dateRangeStr = "Last 7 Days";
+      else if (filterPreset === 'CUSTOM') dateRangeStr = filterDate;
+      doc.text(`Date Range: ${dateRangeStr}`, 14, 48);
+
+      // Table mapping
+      const tableColumn = ["Timestamp", "Station", "Value", "Staff", "Status"];
+      const tableRows: any[] = [];
+
+      filteredLogs.forEach((log) => {
+        const timeStr = new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = new Date(log.created_at).toLocaleDateString();
+        const readingObj = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0] : null;
+        const readingVal = readingObj ? `${readingObj.entry_value}°` : "—";
+        const statusText = log.is_breach ? "Breach" : "Safe";
+
+        // Store pure string values for autoTable calculations
+        tableRows.push([
+          `${dateStr} ${timeStr}`,
+          log.stations?.name || "Unknown",
+          readingVal,
+          log.staff?.full_name || "Unknown",
+          statusText
+        ]);
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        headStyles: { fillColor: [17, 17, 16], textColor: [255, 255, 255] },
+        didParseCell: function (data) {
+          // Highlight Breach rows
+          if (data.section === 'body') {
+            const statusVal = data.row.raw ? (data.row.raw as unknown as any[])[4] : null;
+            if (statusVal === "Breach") {
+              data.cell.styles.fillColor = [252, 235, 235]; // Light red
+              data.cell.styles.textColor = [121, 31, 31];   // Dark red text
+            }
+          }
+        }
+      });
+
+      // Name format: AuditShield_Report_[Date].pdf
+      const safeDate = filterDate || new Date().toISOString().split('T')[0];
+      doc.save(`AuditShield_Report_${safeDate}.pdf`);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("Failed to generate PDF. Check console for details.");
+    }
   };
 
   if (loading && stations.length === 0) {
@@ -640,19 +720,19 @@ export default function OperationalDashboard() {
              {/* Presets Button Group */}
             <div className="flex bg-[#fcfbf9] border border-black/15 items-center rounded-lg overflow-hidden h-9 shadow-sm p-1">
                <button 
-                  onClick={() => setFilterPreset('TODAY')} 
+                  onClick={() => { setFilterPreset('TODAY'); setCurrentPage(1); }} 
                   className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'TODAY' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
                >
                   Today
                </button>
                <button 
-                  onClick={() => setFilterPreset('WEEK')} 
+                  onClick={() => { setFilterPreset('WEEK'); setCurrentPage(1); }} 
                   className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'WEEK' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
                >
                   This Week
                </button>
                <button 
-                  onClick={() => setFilterPreset('CUSTOM')} 
+                  onClick={() => { setFilterPreset('CUSTOM'); setCurrentPage(1); }} 
                   className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'CUSTOM' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
                >
                   Custom
@@ -666,7 +746,7 @@ export default function OperationalDashboard() {
                    type="date" 
                    max={todayStr}
                    value={filterDate} 
-                   onChange={e => setFilterDate(e.target.value)}
+                   onChange={e => { setFilterDate(e.target.value); setCurrentPage(1); }}
                    className="text-[13px] px-3 h-full outline-none font-medium text-[#111]"
                  />
                </div>
@@ -674,7 +754,7 @@ export default function OperationalDashboard() {
 
             <select 
               value={filterStation} 
-              onChange={e => setFilterStation(e.target.value)}
+              onChange={e => { setFilterStation(e.target.value); setCurrentPage(1); }}
               className="h-9 bg-white border border-black/15 rounded-lg px-3 text-[13px] font-medium text-[#111] outline-none shadow-sm cursor-pointer"
             >
               <option value="">All Stations</option>
@@ -683,7 +763,7 @@ export default function OperationalDashboard() {
 
             <select 
               value={filterStaff} 
-              onChange={e => setFilterStaff(e.target.value)}
+              onChange={e => { setFilterStaff(e.target.value); setCurrentPage(1); }}
               className="h-9 bg-white border border-black/15 rounded-lg px-3 text-[13px] font-medium text-[#111] outline-none shadow-sm cursor-pointer"
             >
               <option value="">All Staff</option>
@@ -753,6 +833,28 @@ export default function OperationalDashboard() {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Pagination Footer */}
+        <div className="p-4 border-t border-black/10 flex items-center justify-between bg-[#fcfbf9]">
+          <div className="text-[13px] text-[#6b6b67] font-medium">
+            Showing {totalLogs === 0 ? 0 : (currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalLogs)} of {totalLogs} logs
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentPage === 1 || isFiltering}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className="h-8 px-3 rounded-md border border-black/10 text-[13px] font-medium bg-white hover:bg-black/5 disabled:opacity-50 transition-colors"
+            >
+              Previous
+            </button>
+            <button
+              disabled={currentPage * pageSize >= totalLogs || isFiltering}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="h-8 px-3 rounded-md border border-black/10 text-[13px] font-medium bg-white hover:bg-black/5 disabled:opacity-50 transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 
