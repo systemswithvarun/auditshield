@@ -100,7 +100,7 @@ export default function AuditReportsPage() {
         if (logErr) throw logErr;
 
         // Filter valid joins
-        const validLogs = (data || []).filter((l: any) => l.stations !== null && l.staff !== null) as LogRecord[];
+        const validLogs = (data as unknown as LogRecord[]).filter(l => l.stations !== null && l.staff !== null);
         setLogs(validLogs);
 
       } catch (err: any) {

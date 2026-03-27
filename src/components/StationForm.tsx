@@ -141,17 +141,40 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
     };
     
     // Execute Supabase Insert
-    const { error } = await supabase.from("logs").insert([payload]);
-
-    setLoading(false);
+    const { data: logData, error } = await supabase
+      .from("logs")
+      .insert([payload])
+      .select()
+      .single();
 
     if (error) {
       console.error("Supabase Error:", error);
       setDbError(error.message || "Failed to sync with Supabase. Ensure Keys are configured and foreign keys exist.");
     } else {
+      // Attempt to automatically resolve active schedule instances
+      if (logData) {
+        try {
+          const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+          const todayStr = new Date().toISOString().split('T')[0];
+
+          await supabase
+            .from('schedule_instances')
+            .update({ status: 'COMPLETED', completed_log_id: logData.id })
+            .eq('station_id', station.id)
+            .eq('target_date', todayStr)
+            .eq('status', 'PENDING')
+            .lte('window_start', nowTimeStr)
+            .gte('window_end', nowTimeStr);
+        } catch (scheduleErr) {
+          console.warn("Failed to update active schedule instance:", scheduleErr);
+        }
+      }
+
       // ONLY manifest the success UI once DB confirms
       setSubmitted(true);
     }
+
+    setLoading(false);
   };
 
   if (submitted) {

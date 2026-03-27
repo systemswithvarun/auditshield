@@ -3,12 +3,21 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Loader2, AlertTriangle, CheckCircle, Clock, Calendar, Filter, Printer, AlertCircle as AlertCircleIcon, MapPin, Activity, FileText } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle, Clock, Calendar, Filter, Printer, AlertCircle as AlertCircleIcon, MapPin, Activity, FileText, BarChart3, Search } from "lucide-react";
 
 type Org = { id: string; name: string };
 type Location = { id: string; name: string };
 type Station = { id: string; name: string; icon: string };
 type Staff = { id: string; full_name: string };
+
+type ScheduleInstance = {
+  id: string;
+  station_id: string;
+  window_start: string;
+  window_end: string;
+  status: string;
+  stations: { name: string };
+};
 
 type LogRecord = {
   id: string;
@@ -34,6 +43,7 @@ export default function OperationalDashboard() {
   const [todayLogs, setTodayLogs] = useState<LogRecord[]>([]);
   const [criticalAlerts, setCriticalAlerts] = useState<LogRecord[]>([]);
   const [recentLogs, setRecentLogs] = useState<LogRecord[]>([]);
+  const [schedulesToday, setSchedulesToday] = useState<ScheduleInstance[]>([]);
   
   // Filter states
   const todayStr = new Date().toISOString().split('T')[0];
@@ -57,17 +67,15 @@ export default function OperationalDashboard() {
           .eq("owner_id", userData.user.id)
           .maybeSingle();
 
-        if (orgError) throw orgError;
-        if (!orgData) {
-          router.push("/onboard/finish-setup");
-          return;
+        if (orgData) {
+          // Passively execute our daily generator (Simulated CRON)
+          await supabase.rpc('generate_daily_schedules');
         }
-        setOrg(orgData);
 
         const { data: locData, error: locErr } = await supabase
           .from("locations")
           .select("id, name")
-          .eq("organization_id", orgData.id);
+          .eq("organization_id", orgData?.id);
 
         if (locErr) throw locErr;
         setLocations(locData || []);
@@ -157,6 +165,18 @@ export default function OperationalDashboard() {
         
         const validRecentLogs = (rLogs as any[] || []).filter(l => l.stations !== null) as LogRecord[];
         setRecentLogs(validRecentLogs);
+
+        // F. Fetch Today's Schedules for the Compliance Pulse
+        const { data: pulseData } = await supabase
+          .from("schedule_instances")
+          .select(`
+            id, station_id, window_start, window_end, status,
+            stations!inner(name, location_id)
+          `)
+          .eq("stations.location_id", activeLocation)
+          .eq("target_date", startOfToday.split('T')[0]);
+        
+        setSchedulesToday((pulseData as any[]) || []);
 
       } catch (err: any) {
         console.error("Dashboard fetch error", err);
@@ -277,8 +297,67 @@ export default function OperationalDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         
-        {/* Left Column: Today View & Recent Activity */}
+        {/* Left Column: Pulse & Today View */}
         <div className="lg:col-span-2 flex flex-col gap-6">
+
+          {/* Compliance Pulse */}
+          <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+            <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
+              <BarChart3 size={18} className="text-[#97C459]" />
+              Dialy Compliance Pulse
+            </h2>
+            
+            <div className="flex flex-col gap-4">
+               {schedulesToday.length === 0 ? (
+                 <div className="text-[13px] text-[#888] font-medium py-2">
+                   No compliance schedules mapped for today. Configure windows in Schedules module.
+                 </div>
+               ) : (
+                 <div className="space-y-3">
+                   {schedulesToday.map(sc => {
+                     const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                     let displayStatus = sc.status;
+                     
+                     // Compute strict MISSED check
+                     if (sc.status === 'PENDING' && sc.window_end < nowTimeStr) {
+                        displayStatus = 'MISSED';
+                     }
+
+                     return (
+                       <div key={sc.id} className="flex items-center justify-between border-b border-black/5 pb-3 last:border-0 last:pb-0">
+                         <div>
+                            <div className="font-bold text-[14px]">{sc.stations?.name}</div>
+                            <div className="text-[12px] text-[#888] font-mono mt-0.5">
+                              {sc.window_start.substring(0,5)} - {sc.window_end.substring(0,5)}
+                            </div>
+                         </div>
+                         <div>
+                           {displayStatus === 'COMPLETED' && (
+                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] border border-[#97C459] px-2 py-0.5 rounded-md">
+                                <CheckCircle size={12} strokeWidth={3} />
+                                Safe
+                             </span>
+                           )}
+                           {displayStatus === 'PENDING' && (
+                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6b6b67] bg-[#f5f4f0] border border-black/10 px-2 py-0.5 rounded-md">
+                                <Clock size={12} strokeWidth={3} />
+                                Operating
+                             </span>
+                           )}
+                           {displayStatus === 'MISSED' && (
+                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#E24B4A] bg-[#FFF4F4] border border-[#F09595] px-2 py-0.5 rounded-md">
+                                <AlertTriangle size={12} strokeWidth={3} />
+                                Missed
+                             </span>
+                           )}
+                         </div>
+                       </div>
+                     );
+                   })}
+                 </div>
+               )}
+            </div>
+          </section>
           
           {/* Today View */}
           <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">

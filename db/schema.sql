@@ -59,3 +59,43 @@ CREATE TABLE corrective_actions (
     action_taken TEXT NOT NULL,
     resolved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 7. Schedules (The Master Blueprint)
+CREATE TABLE schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    station_id UUID REFERENCES stations(id) ON DELETE CASCADE,
+    window_start TIME NOT NULL, -- e.g., '08:00'
+    window_end TIME NOT NULL, -- e.g., '12:00'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 8. Schedule Instances (The Daily Manifest)
+CREATE TABLE schedule_instances (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    schedule_id UUID REFERENCES schedules(id) ON DELETE CASCADE,
+    station_id UUID REFERENCES stations(id) ON DELETE CASCADE,
+    target_date DATE NOT NULL,
+    window_start TIME NOT NULL,
+    window_end TIME NOT NULL,
+    status TEXT DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'MISSED'
+    completed_log_id UUID REFERENCES logs(id), -- Nullable
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(schedule_id, target_date)
+);
+
+-- Active Generator (Call this on Kiosk/Dashboard loads to ensure daily generation)
+CREATE OR REPLACE FUNCTION generate_daily_schedules()
+RETURNS void AS $$
+BEGIN
+  INSERT INTO schedule_instances (schedule_id, station_id, target_date, window_start, window_end, status)
+  SELECT 
+    id AS schedule_id,
+    station_id,
+    CURRENT_DATE AS target_date,
+    window_start,
+    window_end,
+    'PENDING'
+  FROM schedules
+  ON CONFLICT (schedule_id, target_date) DO NOTHING;
+END;
+$$ LANGUAGE plpgsql;
