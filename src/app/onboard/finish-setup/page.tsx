@@ -94,15 +94,12 @@ export default function FinishSetupPage() {
       if (locError) throw new Error(locError.message || "Failed to create location.");
 
       // Step C: Insert into staff
-      const { error: staffError } = await supabase
-        .from("staff")
-        .insert({
-          location_id: locData.id,
-          full_name: user?.email ? user.email.split('@')[0] : "Admin",
-          role: "Admin",
-          pin_code: formData.pin, // Utilizing pin_code matching onboard/page.tsx
-          is_active: true
-        });
+      const { error: staffError } = await supabase.rpc('create_admin_staff', {
+        p_location_id: locData.id,
+        p_full_name: user?.email ? user.email.split('@')[0] : "Admin",
+        p_pin: formData.pin,
+        p_role: 'admin'
+      });
 
       if (staffError) throw new Error(staffError.message || "Failed to register admin staff profile.");
 
