@@ -100,17 +100,13 @@ export default function StaffManagement() {
     setFormLoading(true);
 
     try {
-      const { error: insertError } = await supabase
-        .from("staff")
-        .insert({
-          location_id: formData.locationId,
-          full_name: formData.fullName,
-          role: formData.role,
-          pin_hash: formData.pin, // Wait, schema uses pin_hash or pin_code? Let me check onboard schema. Ah, onboard uses `pin_code` for prototype or `pin_hash`. The schema.sql uses `pin_hash`. onboard/page.tsx uses `pin_code`. I'll try both or just pin_hash if it exists. Actually, onboard uses `pin_code`. Let me just stick to `pin_hash` to match schema, but onboard used `pin_code`. Wait, onboard line 91 uses `pin_code: formData.pin`. I will use `pin_hash`.
-          is_active: true
-        });
-
-      if (insertError) throw new Error(insertError.message);
+      const { error: staffError } = await supabase.rpc('create_admin_staff', {
+        p_location_id: formData.locationId,
+        p_full_name: formData.fullName,
+        p_pin: formData.pin,
+        p_role: formData.role || 'staff'
+      });
+      if (staffError) throw new Error(staffError.message);
 
       setFormSuccess(`Successfully added staff member: ${formData.fullName}`);
       setFormData(prev => ({ ...prev, fullName: "", role: "", pin: "" }));
@@ -118,25 +114,7 @@ export default function StaffManagement() {
       // Refresh staff
       await fetchData();
     } catch (err: any) {
-      // If error is about pin_code not existing (e.g. database schema matches onboard), fallback.
-      try {
-         const { error: fallbackError } = await supabase
-          .from("staff")
-          .insert({
-            location_id: formData.locationId,
-            full_name: formData.fullName,
-            role: formData.role,
-            pin_code: formData.pin,
-            is_active: true
-          });
-          if (fallbackError) throw new Error(fallbackError.message);
-          
-          setFormSuccess(`Successfully added staff member: ${formData.fullName}`);
-          setFormData(prev => ({ ...prev, fullName: "", role: "", pin: "" }));
-          await fetchData();
-      } catch (fallbackErr: any) {
-         setFormError(fallbackErr.message || "Failed to add staff member.");
-      }
+      setFormError(err.message || "Failed to add staff member.");
     } finally {
       setFormLoading(false);
     }

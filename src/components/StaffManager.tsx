@@ -24,13 +24,12 @@ export default function StaffManager({ locationId }: { locationId: string }) {
 
     setLoading(true);
 
-    const { error } = await supabase.from("staff").insert([{
-      full_name: `${firstName} ${lastName}`,
-      role: role,
-      pin_code: pin,
-      location_id: locationId,
-      is_active: true
-    }]);
+    const { error } = await supabase.rpc('create_admin_staff', {
+      p_location_id: locationId,
+      p_full_name: `${firstName} ${lastName}`,
+      p_pin: pin,
+      p_role: role || 'staff'
+    });
 
     setLoading(false);
 
