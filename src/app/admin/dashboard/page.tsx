@@ -28,8 +28,9 @@ type LogRecord = {
   created_at: string;
   is_breach: boolean;
   entry_data: any[];
-  staff: { id: string; full_name: string };
-  stations: { id: string; name: string; icon: string };
+  staff_name: string;
+  station_name: string;
+  station_id: string;
 };
 
 export default function OperationalDashboard() {
@@ -76,10 +77,7 @@ export default function OperationalDashboard() {
           .eq("owner_id", userData.user.id)
           .maybeSingle();
 
-        if (orgData) {
-          // Passively execute our daily generator (Simulated CRON)
-          await supabase.rpc('generate_daily_schedules');
-        }
+        if (orgData) setOrg(orgData);
 
         const { data: locData, error: locErr } = await supabase
           .from("locations")
@@ -131,12 +129,8 @@ export default function OperationalDashboard() {
         // C. Fetch Today's Logs for the widgets
         const { data: tLogs } = await supabase
           .from("logs")
-          .select(`
-            id, created_at, is_breach, entry_data,
-            staff (id, full_name),
-            stations (id, name, icon)
-          `)
-          .eq("stations.location_id", activeLocation)
+          .select(`id, created_at, is_breach, entry_data, staff_name, station_name, station_id`)
+          .eq("location_id", activeLocation)
           .gte("created_at", startOfToday)
           .order("created_at", { ascending: false });
         
@@ -147,12 +141,8 @@ export default function OperationalDashboard() {
         // D. Fetch Critical Alerts (last 24h, is_breach = true)
         const { data: cLogs } = await supabase
           .from("logs")
-          .select(`
-            id, created_at, is_breach, entry_data,
-            staff (id, full_name),
-            stations (id, name, icon)
-          `)
-          .eq("stations.location_id", activeLocation)
+          .select(`id, created_at, is_breach, entry_data, staff_name, station_name, station_id`)
+          .eq("location_id", activeLocation)
           .eq("is_breach", true)
           .gte("created_at", yesterday)
           .order("created_at", { ascending: false });
@@ -163,12 +153,8 @@ export default function OperationalDashboard() {
         // E. Fetch Recent Activity (Last 10 overall)
         const { data: rLogs } = await supabase
           .from("logs")
-          .select(`
-            id, created_at, is_breach, entry_data,
-            staff (id, full_name),
-            stations (id, name, icon)
-          `)
-          .eq("stations.location_id", activeLocation)
+          .select(`id, created_at, is_breach, entry_data, staff_name, station_name, station_id`)
+          .eq("location_id", activeLocation)
           .order("created_at", { ascending: false })
           .limit(10);
         
@@ -249,12 +235,8 @@ export default function OperationalDashboard() {
 
         let query = supabase
           .from("logs")
-          .select(`
-            id, created_at, is_breach, entry_data,
-            staff!inner(id, full_name),
-            stations!inner(id, name, icon)
-          `, { count: 'exact' })
-          .eq("stations.location_id", activeLocation)
+          .select(`id, created_at, is_breach, entry_data, staff_name, station_name, station_id`, { count: 'exact' })
+          .eq("location_id", activeLocation)
           .gte("created_at", startDate.toISOString())
           .lt("created_at", endDate.toISOString())
           .order("created_at", { ascending: false });
@@ -284,7 +266,7 @@ export default function OperationalDashboard() {
   // Derived View: Station Statuses for 'Today View'
   const stationStatuses = useMemo(() => {
     return stations.map(station => {
-      const logsForStation = todayLogs.filter(l => l.stations?.id === station.id);
+      const logsForStation = todayLogs.filter(l => l.station_id === station.id);
       
       let status: "PENDING" | "SAFE" | "BREACH" | "DUE_SOON" = "PENDING";
       
@@ -350,15 +332,15 @@ export default function OperationalDashboard() {
         const timeStr = new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateStr = new Date(log.created_at).toLocaleDateString();
         const readingObj = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0] : null;
-        const readingVal = readingObj ? `${readingObj.entry_value}°` : "—";
+        const readingVal = readingObj ? `${readingObj.value}°` : "—";
         const statusText = log.is_breach ? "Breach" : "Safe";
 
         // Store pure string values for autoTable calculations
         tableRows.push([
           `${dateStr} ${timeStr}`,
-          log.stations?.name || "Unknown",
+          log.station_name || "Unknown",
           readingVal,
-          log.staff?.full_name || "Unknown",
+          log.staff_name || "Unknown",
           statusText
         ]);
       });
@@ -644,7 +626,7 @@ export default function OperationalDashboard() {
                     <div key={alert.id} className="bg-white/80 p-4 rounded-xl border border-[#F09595]/40 text-[14px]">
                       <div className="flex justify-between items-start mb-2">
                         <div className="font-bold text-[#791F1F]">
-                          {alert.stations?.name} • <span className="text-[#111]">{unsafeEntry?.entry_value}°</span>
+                          {alert.station_name} • <span className="text-[#111]">{unsafeEntry?.value}°</span>
                         </div>
                         <span className="text-[12px] text-[#791F1F]/70 font-medium">
                           {new Date(alert.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -654,7 +636,7 @@ export default function OperationalDashboard() {
                         <span className="font-semibold opacity-70">Corrective Action:</span> {unsafeEntry?.corrective_action || "None provided"}
                       </p>
                       <div className="text-[11.5px] text-[#6b6b67] font-medium">
-                        Logged by {alert.staff?.full_name}
+                        Logged by {alert.staff_name}
                       </div>
                     </div>
                   );
@@ -677,20 +659,20 @@ export default function OperationalDashboard() {
               {recentLogs.map((log) => {
                 const isFail = log.is_breach;
                 // Just grab the first reading for summary view
-                const mainReading = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0].entry_value : "✓";
+                const mainReading = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0].value : "✓";
                 
                 return (
                   <div key={log.id} className="relative pl-8 py-3 group">
                     <div className={`absolute left-[7px] top-[18px] w-[9px] h-[9px] rounded-full ring-4 ring-white ${isFail ? 'bg-[#E24B4A]' : 'bg-[#97C459]'}`}></div>
                     <div className="bg-[#fcfbf9] border border-black/5 group-hover:bg-[#f5f4f0] transition-colors rounded-xl p-3">
                       <div className="flex justify-between items-start mb-1">
-                        <span className="font-bold text-[13px]">{log.stations?.name}</span>
+                        <span className="font-bold text-[13px]">{log.station_name}</span>
                         <span className={`font-mono text-[13px] font-bold ${isFail ? 'text-[#E24B4A]' : 'text-[#3B6D11]'}`}>
                           {mainReading}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[12px] text-[#888]">
-                        <span>{log.staff?.full_name}</span>
+                        <span>{log.staff_name}</span>
                         <span>{new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                       </div>
                     </div>
@@ -798,15 +780,15 @@ export default function OperationalDashboard() {
             <tbody className="text-[14px]">
               {filteredLogs.length > 0 ? filteredLogs.map(log => {
                 const readingObj = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0] : null;
-                const readingVal = readingObj ? readingObj.entry_value : "—";
+                const readingVal = readingObj ? readingObj.value : "—";
                 
                 return (
                   <tr key={log.id} className="border-b border-black/5 last:border-0 hover:bg-[#f8f7f4] transition-colors">
                     <td className="px-6 py-4 text-[#6b6b67] whitespace-nowrap">
                       {new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </td>
-                    <td className="px-6 py-4 font-medium text-[#111]">{log.stations?.name}</td>
-                    <td className="px-6 py-4 text-[#6b6b67]">{log.staff?.full_name}</td>
+                    <td className="px-6 py-4 font-medium text-[#111]">{log.station_name}</td>
+                    <td className="px-6 py-4 text-[#6b6b67]">{log.staff_name}</td>
                     <td className="px-6 py-4 font-mono font-bold">{readingVal}°</td>
                     <td className="px-6 py-4">
                       {log.is_breach ? (
