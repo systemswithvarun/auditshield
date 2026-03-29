@@ -34,6 +34,7 @@ export default function AuditReportsPage() {
   const [showExceptionsOnly, setShowExceptionsOnly] = useState(false);
   const [schedules, setSchedules] = useState<ScheduleInstance[]>([]);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const initApp = async () => {
@@ -117,38 +118,86 @@ export default function AuditReportsPage() {
     return locations.find(l => l.id === locId)?.name || "Unknown Location";
   };
 
-  const exportCSV = () => {
-    if (schedules.length === 0) return;
+  const exportCSV = async () => {
+    if (!org || locations.length === 0) return;
+    setIsExporting(true);
+    try {
+      const { data, error: exportErr } = await supabase
+        .from("schedule_instances")
+        .select(`
+          id, target_date, window_start, window_end, status,
+          stations!inner(id, name, location_id)
+        `)
+        .in("stations.location_id", locations.map(l => l.id))
+        .gte("target_date", startDate)
+        .lte("target_date", endDate)
+        .order("target_date", { ascending: false })
+        .order("window_start", { ascending: true });
 
-    // Headers
-    const headers = ["Target Date", "Location", "Check Name (Station)", "Time Window", "Status", "UUID"];
-    
-    const rows = schedules.map(sc => {
-      const windowStr = `${sc.window_start.substring(0,5)} - ${sc.window_end.substring(0,5)}`;
-      return [
-        `"${sc.target_date}"`,
-        `"${getLocationName(sc.stations.location_id).replace(/"/g, '""')}"`,
-        `"${sc.stations.name.replace(/"/g, '""')}"`,
-        `"${windowStr}"`,
-        `"${sc.status}"`,
-        `"${sc.id}"`
-      ].join(",");
-    });
+      if (exportErr) throw exportErr;
 
-    const csvContent = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `audit_report_${org?.name.replace(/\\s+/g, '_')}_${startDate}_to_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const allRecords = (data as unknown as ScheduleInstance[]).filter(l => l.stations !== null);
+
+      if (allRecords.length === 0) return;
+
+      const headers = ["Target Date", "Location", "Station", "Time Window", "Status", "UUID"];
+      const rows = allRecords.map(sc => {
+        const windowStr = `${sc.window_start.substring(0,5)} - ${sc.window_end.substring(0,5)}`;
+        return [
+          `"${sc.target_date}"`,
+          `"${getLocationName(sc.stations.location_id).replace(/"/g, '""')}"`,
+          `"${sc.stations.name.replace(/"/g, '""')}"`,
+          `"${windowStr}"`,
+          `"${sc.status}"`,
+          `"${sc.id}"`
+        ].join(",");
+      });
+
+      const csvContent = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `audit_report_${org.name.replace(/\\s+/g, '_')}_${startDate}_to_${endDate}_COMPLETE.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError("Export failed: " + err.message);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  const triggerPrint = () => {
-    window.print();
+  const triggerPrint = async () => {
+    if (!org || locations.length === 0) return;
+    setIsExporting(true);
+    try {
+      const { data, error: printErr } = await supabase
+        .from("schedule_instances")
+        .select(`
+          id, target_date, window_start, window_end, status,
+          stations!inner(id, name, location_id)
+        `)
+        .in("stations.location_id", locations.map(l => l.id))
+        .gte("target_date", startDate)
+        .lte("target_date", endDate)
+        .order("target_date", { ascending: false })
+        .order("window_start", { ascending: true });
+
+      if (printErr) throw printErr;
+
+      const allRecords = (data as unknown as ScheduleInstance[]).filter(l => l.stations !== null);
+      setSchedules(allRecords);
+
+      await new Promise(resolve => setTimeout(resolve, 150));
+      window.print();
+    } catch (err: any) {
+      setError("Print failed: " + err.message);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (loading) {
@@ -291,17 +340,19 @@ export default function AuditReportsPage() {
           <div className="flex items-center gap-3 w-full md:w-auto">
             <button 
               onClick={exportCSV}
-              disabled={schedules.length === 0}
+              disabled={schedules.length === 0 || isExporting}
               className="flex-1 md:flex-none h-[42px] bg-white border border-black/10 text-[#111] px-5 rounded-xl text-[14px] font-medium hover:bg-[#f8f7f4] transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
             >
-              <Download size={16} className="mr-2" /> Export CSV
+              {isExporting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Download size={16} className="mr-2" />}
+              {isExporting ? "Exporting..." : "Export CSV"}
             </button>
             <button 
               onClick={triggerPrint}
-              disabled={schedules.length === 0}
+              disabled={schedules.length === 0 || isExporting}
               className="flex-1 md:flex-none h-[42px] bg-[#111] text-white px-5 rounded-xl text-[14px] font-medium hover:bg-black transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
             >
-              <Printer size={16} className="mr-2" /> Print PDF
+              {isExporting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Printer size={16} className="mr-2" />}
+              {isExporting ? "Loading..." : "Print PDF"}
             </button>
           </div>
         </div>

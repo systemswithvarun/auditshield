@@ -24,30 +24,14 @@ function AuthCallbackHandler() {
           throw new Error("Authentication failed: No user found.");
         }
 
-        // Perform server-side logic in our Client Component context
-        // Check if the user has an organization setup
-        const { data: orgData, error: orgError } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("owner_id", session.user.id)
-          .single();
+        const { data: orgData } = await supabase.rpc('get_my_organization')
 
-        if (orgError) {
-          // PGRST116 indicates 0 rows returned, meaning no organization exists
-          if (orgError.code === "PGRST116" || orgError.details?.includes("0 rows")) {
-            router.replace("/onboard");
-            return;
-          }
-          throw orgError;
+        if (!orgData?.exists) {
+          router.replace('/onboard')
+          return
         }
 
-        if (!orgData) {
-          router.replace("/onboard");
-          return;
-        }
-
-        // Success -> User has an organization, redirect to the dashboard
-        router.replace("/admin/dashboard");
+        router.replace('/admin/dashboard')
       } catch (err: any) {
         console.error("Auth callback error:", err);
         setError(err.message || "An unexpected error occurred during authentication.");

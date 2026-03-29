@@ -5,13 +5,13 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export type FieldConfig = {
-  id: string;
+  key: string;
   label: string;
-  unit: string;
-  type: "temp" | "ppm" | "pass";
-  min: number | null;
-  max: number | null;
-  warnMsg: string;
+  type: 'temperature' | 'passfail';
+  min?: number;
+  max?: number;
+  unit?: string;
+  warn_msg?: string;
 };
 
 export type StationConfig = {
@@ -22,9 +22,9 @@ export type StationConfig = {
   iconColor: string;
   desc: string;
   fields: FieldConfig[];
+  pending_count?: number;
+  pending_instance_id?: string | null;
 };
-
-
 
 type FieldState = {
   value: string | boolean | null;
@@ -35,12 +35,14 @@ type FieldState = {
 type Props = {
   station: StationConfig;
   staffId: string;
-  organizationId: string;
-  locationId: string;
+  orgSlug: string;
+  locSlug: string;
+  instanceId?: string | null;
+  sessionToken: string;
   onReset: () => void;
 };
 
-export function StationForm({ station, staffId, organizationId, locationId, onReset }: Props) {
+export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, sessionToken, onReset }: Props) {
   const [formData, setFormData] = useState<Record<string, FieldState>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,41 +53,40 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
     const num = parseFloat(val);
     if (isNaN(num)) return null;
     
-    if (f.min !== null && num < f.min) return 'UNSAFE';
-    if (f.max !== null && num > f.max) return 'UNSAFE';
+    if (f.min !== undefined && num < f.min) return 'UNSAFE';
+    if (f.max !== undefined && num > f.max) return 'UNSAFE';
     return 'SAFE';
   };
 
-  const handleInputChange = (fieldId: string, val: string) => {
-    const f = station.fields.find((x) => x.id === fieldId)!;
+  const handleInputChange = (fieldKey: string, val: string) => {
+    const f = station.fields.find((x) => x.key === fieldKey)!;
     const status = validateTemp(val, f);
-
     setFormData((prev) => ({
       ...prev,
-      [fieldId]: {
+      [fieldKey]: {
         value: val,
         status,
-        correctiveAction: prev[fieldId]?.correctiveAction || "",
+        correctiveAction: prev[fieldKey]?.correctiveAction || "",
       },
     }));
   };
 
-  const handlePassChange = (fieldId: string, passed: boolean) => {
+  const handlePassChange = (fieldKey: string, passed: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      [fieldId]: {
-        value: passed,
+      [fieldKey]: {
+        value: passed ? 'pass' : 'fail',
         status: passed ? 'SAFE' : 'UNSAFE',
-        correctiveAction: prev[fieldId]?.correctiveAction || "",
+        correctiveAction: prev[fieldKey]?.correctiveAction || "",
       },
     }));
   };
 
-  const handleActionChange = (fieldId: string, val: string) => {
+  const handleActionChange = (fieldKey: string, val: string) => {
     setFormData((prev) => ({
       ...prev,
-      [fieldId]: {
-        ...prev[fieldId],
+      [fieldKey]: {
+        ...prev[fieldKey],
         correctiveAction: val,
       },
     }));
@@ -94,112 +95,59 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
   const getIsDisabled = () => {
     let hasData = false;
     for (const f of station.fields) {
-      const fd = formData[f.id];
+      const fd = formData[f.key];
       if (fd && fd.value !== "" && fd.value !== null) {
         hasData = true;
-        // If breach and NO corrective action text, disabled!
         if (fd.status === 'UNSAFE' && !fd.correctiveAction.trim()) {
           return true;
         }
       }
     }
-    return !hasData; // Also disabled if entirely empty
+    return !hasData;
   };
 
   const handleSubmit = async () => {
     setLoading(true);
     setDbError("");
 
-    const isBreachOverall = station.fields.some(
-      (f) => formData[f.id]?.status === 'UNSAFE'
-    );
-
     const entries = station.fields
-      .filter((f) => formData[f.id] && formData[f.id].value !== "" && formData[f.id].value !== null)
+      .filter((f) => {
+        const fd = formData[f.key];
+        return fd && fd.value !== "" && fd.value !== null;
+      })
       .map((f) => {
-         const ds = formData[f.id];
-         return {
-           field_id: f.id,
-           entry_value: ds.value,
-           status: ds.status,
-           corrective_action: ds.status === 'UNSAFE' ? ds.correctiveAction : null,
-           min_at_time: f.min,
-           max_at_time: f.max,
-           organization_id: organizationId,
-           location_id: locationId,
-           station_id: station.id,
-         };
+        const ds = formData[f.key];
+        const entry: Record<string, unknown> = {
+          key: f.key,
+          value: String(ds.value),
+          status: ds.status,
+        };
+        if (ds.status === 'UNSAFE' && ds.correctiveAction.trim()) {
+          entry.corrective_action = ds.correctiveAction.trim();
+        }
+        return entry;
       });
 
-    const payload = {
-      // Using the real staff UUID from our staff fetch
-      staff_id: staffId,
-      station_id: station.id,
-      entry_data: entries,
-      is_breach: isBreachOverall,
-      source_type: 'manual'
-    };
-    
-    // Execute Supabase Insert
-    const { data: logData, error } = await supabase
-      .from("logs")
-      .insert([payload])
-      .select()
-      .single();
+    const { data: logData, error } = await supabase.rpc('submit_kiosk_log', {
+      p_org_slug: orgSlug,
+      p_loc_slug: locSlug,
+      p_station_id: station.id,
+      p_staff_id: staffId,
+      p_entry_data: entries,
+      p_instance_id: instanceId ?? null,
+      p_session_token: sessionToken,
+    });
 
-    if (error) {
-      console.error("Supabase Error:", error);
-      setDbError(error.message || "Failed to sync with Supabase. Ensure Keys are configured and foreign keys exist.");
-    } else {
-      // Attempt to automatically resolve active schedule instances
-      if (logData) {
-        try {
-          const todayStr = new Date().toISOString().split('T')[0];
-          
-          const { data: pendingInst } = await supabase
-            .from('schedule_instances')
-            .select('id, window_start, window_end, grace_period_minutes')
-            .eq('station_id', station.id)
-            .eq('target_date', todayStr)
-            .eq('status', 'PENDING')
-            .maybeSingle();
-
-          if (pendingInst) {
-             const now = new Date();
-             const dStart = new Date(`${todayStr}T${pendingInst.window_start}`);
-             const dEnd = new Date(`${todayStr}T${pendingInst.window_end}`);
-             const graceMins = pendingInst.grace_period_minutes || 15;
-             const dGrace = new Date(dEnd.getTime() + (graceMins * 60000));
-
-             if (now >= dStart) {
-                 let mappedStatus = 'PENDING';
-                 if (now <= dEnd) {
-                     mappedStatus = 'COMPLETED';
-                 } else if (now <= dGrace) {
-                     mappedStatus = 'LATE';
-                 } else {
-                     mappedStatus = 'MISSED';
-                 }
-                 
-                 if (mappedStatus === 'COMPLETED' || mappedStatus === 'LATE') {
-                    await supabase
-                      .from('schedule_instances')
-                      .update({ status: mappedStatus, completed_log_id: logData.id })
-                      .eq('id', pendingInst.id);
-                 } else if (mappedStatus === 'MISSED') {
-                    await supabase
-                      .from('schedule_instances')
-                      .update({ status: 'MISSED' })
-                      .eq('id', pendingInst.id);
-                 }
-             }
-          }
-        } catch (scheduleErr) {
-          console.warn("Failed to update active schedule instance:", scheduleErr);
-        }
+    if (error || logData?.error) {
+      const msg = logData?.error || error?.message || "Submission failed.";
+      if (msg === 'invalid_session') {
+        setDbError("Session expired. Please log out and sign in again.");
+      } else if (msg === 'corrective_action_required') {
+        setDbError("A corrective action is required before this log can be submitted.");
+      } else {
+        setDbError(msg);
       }
-
-      // ONLY manifest the success UI once DB confirms
+    } else {
       setSubmitted(true);
     }
 
@@ -249,26 +197,26 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
       
       <div className="flex flex-col gap-6">
         {station.fields.map((f) => {
-          const ds = formData[f.id] || { value: "", status: null, correctiveAction: "" };
+          const ds = formData[f.key] || { value: "", status: null, correctiveAction: "" };
           const isWarn = ds.status === 'UNSAFE';
 
           return (
-            <div key={f.id} className="flex flex-col">
-              {f.type === "pass" ? (
+            <div key={f.key} className="flex flex-col">
+              {f.type === "passfail" ? (
                 <>
                   <span className="block text-[14px] font-medium text-[#111110] mb-2">
                     {f.label}
                   </span>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => handlePassChange(f.id, true)}
-                      className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === true ? 'bg-[#EAF3DE] border-[#97C459] text-[#3B6D11]' : 'bg-white border-black/10 text-[#111110] hover:border-black/20 hover:bg-[#f8f7f4]'}`}
+                      onClick={() => handlePassChange(f.key, true)}
+                      className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === 'pass' ? 'bg-[#EAF3DE] border-[#97C459] text-[#3B6D11]' : 'bg-white border-black/10 text-[#111110] hover:border-black/20 hover:bg-[#f8f7f4]'}`}
                     >
                       Pass
                     </button>
                     <button
-                      onClick={() => handlePassChange(f.id, false)}
-                      className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === false ? 'bg-[#FCEBEB] border-[#F09595] text-[#791F1F]' : 'bg-white border-black/10 text-[#111110] hover:border-black/20 hover:bg-[#f8f7f4]'}`}
+                      onClick={() => handlePassChange(f.key, false)}
+                      className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === 'fail' ? 'bg-[#FCEBEB] border-[#F09595] text-[#791F1F]' : 'bg-white border-black/10 text-[#111110] hover:border-black/20 hover:bg-[#f8f7f4]'}`}
                     >
                       Fail
                     </button>
@@ -278,7 +226,7 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
                 <>
                   <span className="block text-[14px] font-medium text-[#111110] mb-2">
                     {f.label}
-                    <span className="text-[12px] font-normal text-[#9b9b97] ml-1.5">{f.unit}</span>
+                    {f.unit && <span className="text-[12px] font-normal text-[#9b9b97] ml-1.5">{f.unit}</span>}
                   </span>
                   <div className="relative">
                     <input
@@ -286,12 +234,14 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
                       step="0.1"
                       placeholder="—"
                       value={(ds.value as string) || ""}
-                      onChange={(e) => handleInputChange(f.id, e.target.value)}
+                      onChange={(e) => handleInputChange(f.key, e.target.value)}
                       className={`w-full h-[46px] border rounded-lg px-4 pr-12 text-[15px] text-[#111110] outline-none transition-colors shadow-sm placeholder:text-[#ccc] ${isWarn ? 'border-[#E24B4A] bg-[#fff8f8] focus:border-[#E24B4A]' : 'bg-white border-black/10 focus:border-black/30'}`}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-[#9b9b97] pointer-events-none">
-                      {f.unit}
-                    </span>
+                    {f.unit && (
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-[#9b9b97] pointer-events-none">
+                        {f.unit}
+                      </span>
+                    )}
                   </div>
                 </>
               )}
@@ -302,13 +252,13 @@ export function StationForm({ station, staffId, organizationId, locationId, onRe
                   <AlertCircle size={16} className="text-[#791F1F] mt-[2px] shrink-0" />
                   <div className="flex-1">
                     <div className="text-[13px] font-medium text-[#791F1F] mb-1">Safety alert</div>
-                    <div className="text-[12px] text-[#791F1F] leading-[1.5] mb-3">{f.warnMsg}</div>
+                    <div className="text-[12px] text-[#791F1F] leading-[1.5] mb-3">{f.warn_msg}</div>
                     
-                    <div className="text-[11px] font-semibold text-[#791F1F] opacity-80 mb-1.5 tracking-[0.05em] uppercase">Action Required: Temperature is out of range. Describe corrective steps (e.g., 'Moved stock').</div>
+                    <div className="text-[11px] font-semibold text-[#791F1F] opacity-80 mb-1.5 tracking-[0.05em] uppercase">Action Required: Describe corrective steps (e.g., 'Moved stock').</div>
                     <textarea
                       placeholder="Describe what was done to fix this issue..."
                       value={ds.correctiveAction}
-                      onChange={(e) => handleActionChange(f.id, e.target.value)}
+                      onChange={(e) => handleActionChange(f.key, e.target.value)}
                       className="w-full border border-[#F09595] rounded-lg bg-white/80 p-3 text-[13px] text-[#111110] resize-none outline-none min-h-[70px] leading-[1.5] transition-colors focus:bg-white focus:border-[#E24B4A] placeholder:text-[#a18989] shadow-inner"
                     />
                   </div>

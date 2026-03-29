@@ -19,8 +19,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    let missedMsg = "Processed missed instances";
+    let missedCount = 0;
+
     const todayStr = new Date().toISOString().split('T')[0];
-    
+
     const { data: pendingInstances, error: fetchErr } = await supabaseClient
       .from('schedule_instances')
       .select(`
@@ -39,102 +42,211 @@ serve(async (req) => {
     if (fetchErr) throw fetchErr;
 
     if (!pendingInstances || pendingInstances.length === 0) {
-      return new Response(JSON.stringify({ message: "No pending instances found." }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const missedInstances = pendingInstances.filter((instance) => {
-       const now = new Date(); // Deno executes in UTC
-       
-       // Parse the exact target time boundary mapped in UTC isolating Date blocks
-       const dEnd = new Date(`${instance.target_date}T${instance.window_end}Z`);
-       
-       // Execute grace calculations extracting integer minutes securely
-       const dGrace = new Date(dEnd.getTime() + ((instance.grace_period_minutes || 15) * 60000));
-       
-       // Compare mathematical spans
-       return now > dGrace;
-    });
-
-    if (missedInstances.length === 0) {
-      return new Response(JSON.stringify({ message: "No instances missed yet passing grace thresholds." }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // 2. Mark them as MISSED in DB
-    const instanceIds = missedInstances.map(i => i.id);
-    const { error: updateErr } = await supabaseClient
-      .from('schedule_instances')
-      .update({ status: 'MISSED' })
-      .in('id', instanceIds);
-
-    if (updateErr) throw updateErr;
-
-    // 3. Dispatch Emails via Resend
-    if (!RESEND_API_KEY) {
-      console.warn("No RESEND_API_KEY found. Skipping emails.");
+      missedMsg = "No pending instances found.";
     } else {
-      for (const instance of missedInstances) {
-        const stationObj = instance.stations as any;
-        const locObj = stationObj?.locations;
-        const orgObj = locObj?.organizations;
-        const ownerId = orgObj?.owner_id;
+      const missedInstances = pendingInstances.filter((instance) => {
+        const now = new Date(); // Deno executes in UTC
 
-        if (!ownerId) continue;
+        // Parse the exact target time boundary mapped in UTC isolating Date blocks
+        const dEnd = new Date(`${instance.target_date}T${instance.window_end}Z`);
 
-        // Bypassing RLS with service_role to pull exact email from auth.users
-        const { data: authData, error: authErr } = await supabaseClient.auth.admin.getUserById(ownerId);
+        // Execute grace calculations extracting integer minutes securely
+        const dGrace = new Date(dEnd.getTime() + ((instance.grace_period_minutes || 15) * 60000));
+
+        // Compare mathematical spans
+        return now > dGrace;
+      });
+
+      if (missedInstances.length === 0) {
+        missedMsg = "No instances missed yet passing grace thresholds.";
+      } else {
+        missedCount = missedInstances.length;
+        missedMsg = "Successfully processed missed instances bounded by Grace targets";
         
-        if (authErr || !authData?.user?.email) {
-          console.warn("Could not find email for owner:", ownerId);
-          continue;
+        // 2. Mark them as MISSED in DB
+        const instanceIds = missedInstances.map(i => i.id);
+        const { error: updateErr } = await supabaseClient
+          .from('schedule_instances')
+          .update({ status: 'MISSED' })
+          .in('id', instanceIds);
+
+        if (updateErr) throw updateErr;
+
+        // 3. Dispatch Emails via Resend
+        if (!RESEND_API_KEY) {
+          console.warn("No RESEND_API_KEY found. Skipping emails.");
+        } else {
+          for (const instance of missedInstances) {
+            const stationObj = instance.stations as any;
+            const locObj = stationObj?.locations;
+            const orgObj = locObj?.organizations;
+            const ownerId = orgObj?.owner_id;
+
+            if (!ownerId) continue;
+
+            // Bypassing RLS with service_role to pull exact email from auth.users
+            const { data: authData, error: authErr } = await supabaseClient.auth.admin.getUserById(ownerId);
+
+            if (authErr || !authData?.user?.email) {
+              console.warn("Could not find email for owner:", ownerId);
+              continue;
+            }
+
+            const emailAddress = authData.user.email;
+            const stationName = stationObj.name || "Unknown Station";
+            const locationName = locObj.name || "Unknown Location";
+            const closedTime = instance.window_end.substring(0, 5);
+
+            const emailPayload = {
+              from: "AuditShield Alerts <alerts@auditshield.app>",
+              to: [emailAddress],
+              subject: `🚨 AUDIT SHIELD ALERT: Missed Check - ${stationName}`,
+              html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #111;">
+                  <h2 style="color: #E24B4A; margin-top: 0;">System 3 Metric Alert</h2>
+                  <p>A scheduled safety check for <strong>${stationName}</strong> at <strong>${locationName}</strong> was missed. The window closed at <strong>${closedTime}</strong>.</p>
+                  <p>Please review the dashboard immediately.</p>
+                  <p style="background: #f8f7f4; padding: 12px; border-radius: 8px;">
+                     <strong>Target Date:</strong> ${instance.target_date}<br/>
+                     <strong>Maximum Grace Extended:</strong> +${instance.grace_period_minutes}m
+                  </p>
+                  <p>Please log in to the <a href="https://auditshield.app/admin/dashboard" style="color: #245D91; font-weight: bold;">Manager Dashboard</a> to begin mitigation protocols.</p>
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+                  <p style="font-size: 11px; color: #888;">This is an automated System 3 safety alert from AuditShield Compliance Architecture.</p>
+                </div>
+              `
+            };
+
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(emailPayload)
+            });
+
+            if (!res.ok) {
+              console.error("Resend API error:", await res.text());
+            }
+          }
         }
+      }
+    }
 
-        const emailAddress = authData.user.email;
-        const stationName = stationObj.name || "Unknown Station";
-        const locationName = locObj.name || "Unknown Location";
-        const closedTime = instance.window_end.substring(0, 5);
+    // ==========================================
+    // BLOCK 2: BREACH ALERTS (NEW)
+    // ==========================================
+    let breachMsg = "Processed breaches";
+    let breachCount = 0;
 
-        const emailPayload = {
-          from: "AuditShield Alerts <alerts@auditshield.app>",
-          to: [emailAddress],
-          subject: `🚨 AUDIT SHIELD ALERT: Missed Check - ${stationName}`,
-          html: `
-            <div style="font-family: sans-serif; padding: 20px; color: #111;">
-              <h2 style="color: #E24B4A; margin-top: 0;">System 3 Metric Alert</h2>
-              <p>A scheduled safety check for <strong>${stationName}</strong> at <strong>${locationName}</strong> was missed. The window closed at <strong>${closedTime}</strong>.</p>
-              <p>Please review the dashboard immediately.</p>
-              <p style="background: #f8f7f4; padding: 12px; border-radius: 8px;">
-                 <strong>Target Date:</strong> ${instance.target_date}<br/>
-                 <strong>Maximum Grace Extended:</strong> +${instance.grace_period_minutes}m
-              </p>
-              <p>Please log in to the <a href="https://auditshield.app/admin/dashboard" style="color: #245D91; font-weight: bold;">Manager Dashboard</a> to begin mitigation protocols.</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-              <p style="font-size: 11px; color: #888;">This is an automated System 3 safety alert from AuditShield Compliance Architecture.</p>
-            </div>
-          `
-        };
+    const { data: breachLogs, error: breachErr } = await supabaseClient
+      .from('logs')
+      .select(`
+        id,
+        entry_data,
+        created_at,
+        alerted_at,
+        stations (
+          name,
+          locations (
+            name,
+            organizations (
+              owner_id
+            )
+          )
+        )
+      `)
+      .eq('is_breach', true)
+      .is('alerted_at', null);
 
-        const res = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${RESEND_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(emailPayload)
-        });
+    if (breachErr) throw breachErr;
 
-        if (!res.ok) {
-          console.error("Resend API error:", await res.text());
+    if (!breachLogs || breachLogs.length === 0) {
+      breachMsg = "No unalerted breaches found.";
+    } else {
+      breachCount = breachLogs.length;
+      breachMsg = "Successfully processed unalerted breaches";
+
+      if (!RESEND_API_KEY) {
+        console.warn("No RESEND_API_KEY found. Skipping breach emails.");
+      } else {
+        for (const log of breachLogs) {
+          const stationObj = log.stations as any;
+          const locObj = stationObj?.locations;
+          const orgObj = locObj?.organizations;
+          const ownerId = orgObj?.owner_id;
+
+          if (!ownerId) continue;
+
+          // Bypassing RLS with service_role to pull exact email from auth.users
+          const { data: authData, error: authErr } = await supabaseClient.auth.admin.getUserById(ownerId);
+          
+          if (authErr || !authData?.user?.email) {
+            console.warn("Could not find email for owner:", ownerId);
+            continue;
+          }
+
+          const emailAddress = authData.user.email;
+          const stationName = stationObj?.name || "Unknown Station";
+          const locationName = locObj?.name || "Unknown Location";
+          
+          const entryDataStr = log.entry_data ? JSON.stringify(log.entry_data, null, 2) : "No data provided";
+          const createdAtFormatted = new Date(log.created_at).toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC';
+
+          const emailPayload = {
+            from: "AuditShield Alerts <alerts@auditshield.app>",
+            to: [emailAddress],
+            subject: `🚨 CRITICAL ALERT: Safety Breach Logged - ${stationName}`,
+            html: `
+              <div style="font-family: sans-serif; padding: 20px; color: #111;">
+                <h2 style="color: #E24B4A; margin-top: 0;">Critical Safety Breach Alert</h2>
+                <p>A safety check logged at <strong>${stationName}</strong> (${locationName}) has triggered a <strong>Breach</strong> condition.</p>
+                <p>Please review the log immediately and take corrective action.</p>
+                
+                <div style="background: #f8f7f4; padding: 12px; border-radius: 8px; margin-top: 15px;">
+                   <p style="margin: 0 0 10px 0;"><strong>Logged On:</strong> ${createdAtFormatted}</p>
+                   <p style="margin: 0;"><strong>Entry Data:</strong></p>
+                   <pre style="background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto; font-size: 12px;">${entryDataStr}</pre>
+                </div>
+                
+                <p style="margin-top: 20px;">Please log in to the <a href="https://auditshield.app/admin/dashboard" style="color: #E24B4A; font-weight: bold;">Manager Dashboard</a> to view details.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+                <p style="font-size: 11px; color: #888;">This is an automated safety breach alert from AuditShield Compliance Architecture.</p>
+              </div>
+            `
+          };
+
+          const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailPayload)
+          });
+
+          if (!res.ok) {
+            console.error("Resend API error:", await res.text());
+          } else {
+            await supabaseClient
+              .from('logs')
+              .update({ alerted_at: new Date().toISOString() })
+              .eq('id', log.id);
+          }
         }
       }
     }
 
     return new Response(JSON.stringify({
-      message: "Successfully processed missed instances bounded by Grace targets",
-      count: missedInstances.length
+      missed_instances: {
+        message: missedMsg,
+        count: missedCount
+      },
+      breaches: {
+        message: breachMsg,
+        count: breachCount
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

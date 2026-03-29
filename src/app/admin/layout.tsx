@@ -17,6 +17,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (error || !data.user) {
         router.push("/login");
       } else {
+        const { data: orgData } = await supabase.rpc('get_my_organization');
+        
+        if (!orgData?.exists) {
+          router.replace('/onboard');
+          return;
+        }
+        
         setLoading(false);
       }
     };

@@ -17,6 +17,8 @@ export default async function AdminDashboard() {
     `)
     .order("performed_at", { ascending: false });
 
+  const { data: orgData } = await supabase.rpc('get_my_organization');
+
   // Use the fetched data, or fallback to mock data if the realtime DB is unreachable (e.g. no .env keys)
   let displayLogs: any[] = [];
   
@@ -161,7 +163,7 @@ export default async function AdminDashboard() {
         )}
       </div>
 
-      <StaffManager />
+      <StaffManager locationId={orgData?.location_id || ""} />
     </div>
   );
 }

@@ -15,14 +15,8 @@ type Staff = {
   initials: string;
   color: string;
   pin_code?: string;
+  sessionToken?: string;
 };
-
-const fallbackStaff: Staff[] = [
-  { id: "1", name: "Sarah Jenkins", role: "Store Manager", initials: "SJ", color: "bg-[#E6F1FB] text-[#245D91]", pin_code: "1234" },
-  { id: "2", name: "Mike Chen", role: "Shift Supervisor", initials: "MC", color: "bg-[#FAEEDA] text-[#8C5D19]", pin_code: "1234" },
-  { id: "3", name: "Alex Rivera", role: "Line Cook", initials: "AR", color: "bg-[#EAF3DE] text-[#3B6D11]", pin_code: "1234" },
-  { id: "4", name: "Jessica Taylor", role: "Prep Staff", initials: "JT", color: "bg-[#FCEBEB] text-[#791F1F]", pin_code: "1234" },
-];
 
 export default function KioskPage() {
   const [currentTime, setCurrentTime] = useState<string>("");
@@ -40,32 +34,25 @@ export default function KioskPage() {
   const [stations, setStations] = useState<StationConfig[]>([]);
   const [selectedStation, setSelectedStation] = useState<StationConfig | null>(null);
   const [alerts, setAlerts] = useState<string[]>([]);
-  const [deviceConfig, setDeviceConfig] = useState<{ location: string; stations: string[] } | null>(null);
 
   useEffect(() => {
     const fetchStaff = async () => {
-      let resolvedOrgId = params.orgSlug;
-      let resolvedLocId = params.locSlug;
+      const { data, error } = await supabase.rpc('get_kiosk_data', { 
+        p_org_slug: params.orgSlug,
+        p_loc_slug: params.locSlug
+      });
 
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      
-      if (!uuidRegex.test(resolvedOrgId)) {
-        const { data } = await supabase.from('organizations').select('id').eq('slug', resolvedOrgId).single();
-        if (data) resolvedOrgId = data.id;
-      }
-      if (!uuidRegex.test(resolvedLocId)) {
-        const { data } = await supabase.from('locations').select('id').eq('slug', resolvedLocId).single();
-        if (data) resolvedLocId = data.id;
+      if (error || !data || data.error) {
+        console.error("Failed to load kiosk data:", error || data?.error);
+        return;
       }
 
-      setOrgId(resolvedOrgId);
-      setLocId(resolvedLocId);
+      setOrgId(data.organization_id || "");
+      setLocId(data.location_id || "");
 
-      const { data, error } = await supabase.from('staff').select('*').eq('location_id', resolvedLocId);
       let combined: Staff[] = [];
-      if (!error && data) {
-        combined = data.map((d: any) => {
-           // Provide fallback defaults for computed fields based on what columns actually exist
+      if (data.staff && Array.isArray(data.staff)) {
+        combined = data.staff.map((d: any) => {
            const name = d.full_name || `${d.first_name || ''} ${d.last_name || ''}`.trim() || 'Unknown';
            const names = name.split(" ");
            const first = names[0];
@@ -76,43 +63,47 @@ export default function KioskPage() {
              name: name,
              role: d.role || 'Staff Member',
              initials: `${first[0] || ''}${last[0] || ''}`.toUpperCase(),
-             pin_code: d.pin_code,
              color: "bg-[#EAF3DE] text-[#3B6D11]"
            };
         });
       }
-      setLiveStaff(combined.length > 0 ? combined : []);
+      setLiveStaff(combined);
 
-      // Fetch dynamic stations for this location
-      const { data: stationData, error: stationErr } = await supabase
-        .from('stations')
-        .select('*')
-        .eq('location_id', resolvedLocId)
-        .order('created_at', { ascending: true });
+      if (data.stations && Array.isArray(data.stations)) {
+        const pendingMap: Record<string, { count: number; instance_id: string | null }> = {};
+        if (data.schedules && Array.isArray(data.schedules)) {
+          data.schedules.forEach((sc: any) => {
+            if (!pendingMap[sc.station_id]) {
+              pendingMap[sc.station_id] = { count: 0, instance_id: null };
+            }
+            pendingMap[sc.station_id].count += 1;
+            if (!pendingMap[sc.station_id].instance_id) {
+              pendingMap[sc.station_id].instance_id = sc.id;
+            }
+          });
+        }
 
-      if (!stationErr && stationData) {
-        const dynamicStations: StationConfig[] = stationData.map(st => ({
-          id: st.id,
-          label: st.name,
-          icon: st.icon || "✓",
-          iconBg: "bg-[#f8f7f4]",
-          iconColor: "text-[#111110]",
-          desc: "Operating thresholds active",
-          fields: st.sop_config || []
-        }));
+        const dynamicStations: StationConfig[] = data.stations.map((st: any) => {
+          const pending = pendingMap[st.id] || { count: 0, instance_id: null };
+          return {
+            id: st.id,
+            label: st.name,
+            icon: st.icon || "✓",
+            iconBg: "bg-[#f8f7f4]",
+            iconColor: "text-[#111110]",
+            desc: pending.count > 0
+              ? `${pending.count} check${pending.count > 1 ? 's' : ''} due`
+              : "All checks complete",
+            fields: Array.isArray(st.sop_config) ? st.sop_config : [],
+            pending_count: pending.count,
+            pending_instance_id: pending.instance_id,
+          };
+        });
         setStations(dynamicStations);
       }
     };
     if (params.orgSlug && params.locSlug) {
       fetchStaff();
-    }
-
-    // Load config
-    const cfg = localStorage.getItem("auditshield_device_config");
-    if (cfg) {
-      try {
-        setDeviceConfig(JSON.parse(cfg));
-      } catch (e) {}
     }
 
     const updateTime = () => {
@@ -132,7 +123,6 @@ export default function KioskPage() {
   };
 
   const handleStationClick = (station: StationConfig) => {
-    // If we're changing stations, we can scroll or transition. Here we just set state.
     setSelectedStation(station);
   };
 
@@ -148,7 +138,7 @@ export default function KioskPage() {
           ⚠️ {alerts[0]} {alerts.length > 1 && ` (+${alerts.length - 1} more)`}
         </div>
       )}
-      {/* Top Bar */}`
+      {/* Top Bar */}
       <div className="px-6 pt-5 pb-4 border-b border-black/10 flex items-center gap-3">
         <div className="w-[34px] h-[34px] rounded-[9px] bg-[#111] flex items-center justify-center shrink-0">
           <div className="w-4 h-4 border-[2.5px] border-white rounded-[3px] relative after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-1.5 after:h-1.5 after:bg-white after:rounded-[1px]"></div>
@@ -215,7 +205,7 @@ export default function KioskPage() {
             </div>
             
             <div className="grid gap-2.5">
-              {(deviceConfig ? stations.filter((s) => deviceConfig.stations.includes(s.id)) : stations).map((st) => (
+              {stations.map((st) => (
                 <button
                   key={st.id}
                   onClick={() => handleStationClick(st)}
@@ -230,7 +220,13 @@ export default function KioskPage() {
                   </div>
                   <div className="flex-1 pt-0.5">
                     <div className="text-[14px] font-medium text-[#111110] tracking-tight">{st.label}</div>
-                    <div className="text-[12px] text-[#6b6b67] mt-[2px]">{st.desc}</div>
+                    <div className={`text-[12px] mt-[2px] font-medium ${
+                      st.pending_count && st.pending_count > 0
+                        ? 'text-[#854F0B]'
+                        : 'text-[#3B6D11]'
+                    }`}>
+                      {st.desc}
+                    </div>
                   </div>
                   <div className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-colors ${
                     selectedStation?.id === st.id 
@@ -242,13 +238,15 @@ export default function KioskPage() {
             </div>
 
             {selectedStation && (
-              <StationForm 
-                key={selectedStation.id} 
-                station={selectedStation} 
+              <StationForm
+                key={selectedStation.id}
+                station={selectedStation}
                 staffId={loggedInStaff.id}
-                organizationId={orgId}
-                locationId={locId}
-                onReset={() => setSelectedStation(null)} 
+                orgSlug={params.orgSlug}
+                locSlug={params.locSlug}
+                instanceId={selectedStation.pending_instance_id}
+                sessionToken={loggedInStaff.sessionToken ?? ""}
+                onReset={() => setSelectedStation(null)}
               />
             )}
           </div>
@@ -260,8 +258,8 @@ export default function KioskPage() {
         isOpen={selectedStaff !== null}
         onClose={() => setSelectedStaff(null)}
         staff={selectedStaff}
-        onSuccess={(staff) => {
-          setLoggedInStaff(staff);
+        onSuccess={(staff, sessionToken) => {
+          setLoggedInStaff({ ...staff, sessionToken });
           setSelectedStaff(null);
         }}
       />

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-export default function StaffManager() {
+export default function StaffManager({ locationId }: { locationId: string }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState("");
@@ -24,45 +24,25 @@ export default function StaffManager() {
 
     setLoading(true);
 
-    // Using a dummy location_id for the prototype
-    const DUMMY_LOCATION_ID = "00000000-0000-0000-0000-000000000000";
-
     const { error } = await supabase.from("staff").insert([{
-      first_name: firstName,
-      last_name: lastName,
+      full_name: `${firstName} ${lastName}`,
       role: role,
       pin_code: pin,
-      location_id: DUMMY_LOCATION_ID
+      location_id: locationId,
+      is_active: true
     }]);
 
     setLoading(false);
 
     if (error) {
-      // Setup local mock save if Supabase is unavailable (e.g., no .env.local DB initialized yet)
-      const mockKey = "auditshield_mock_staff";
-      const existing = localStorage.getItem(mockKey);
-      let list = existing ? JSON.parse(existing) : [];
-      list.push({
-        id: Math.random().toString(36).substr(2, 9),
-        first_name: firstName,
-        last_name: lastName,
-        role,
-        pin_code: pin
-      });
-      localStorage.setItem(mockKey, JSON.stringify(list));
-      setSuccessMsg("Staff added locally! (Mock fallback triggered since Supabase is unconfigured)");
-      
-      setFirstName("");
-      setLastName("");
-      setRole("");
-      setPin("");
-    } else {
-      setSuccessMsg(`Successfully added ${firstName} ${lastName}!`);
-      setFirstName("");
-      setLastName("");
-      setRole("");
-      setPin("");
+      setErrorMsg("Failed to add staff member. Please try again.");
+      return;
     }
+    setSuccessMsg(`Successfully added ${firstName} ${lastName}!`);
+    setFirstName("");
+    setLastName("");
+    setRole("");
+    setPin("");
   };
 
   return (

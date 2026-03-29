@@ -16,18 +16,22 @@ type PinPadModalProps = {
   isOpen: boolean;
   onClose: () => void;
   staff: Staff | null;
-  onSuccess: (staff: Staff) => void;
+  onSuccess: (staff: Staff, sessionToken: string) => void;
 };
 
 export default function PinPadModal({ isOpen, onClose, staff, onSuccess }: PinPadModalProps) {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setPin("");
       setShake(false);
+      setErrorMsg("");
+      setAttemptsRemaining(null);
     }
   }, [isOpen]);
 
@@ -43,23 +47,39 @@ export default function PinPadModal({ isOpen, onClose, staff, onSuccess }: PinPa
 
   const handleSubmit = async () => {
     if (pin.length !== 4 || !staff) return;
-    
     setLoading(true);
+    setErrorMsg("");
     try {
-      const { data, error } = await supabase
-        .from('staff')
-        .select('pin_code')
-        .eq('id', staff.id)
-        .single();
-        
-      if (error || !data || data.pin_code !== pin) {
+      const { data, error } = await supabase.rpc('validate_kiosk_pin', {
+        p_staff_id: staff.id,
+        p_pin_attempt: pin
+      });
+
+      if (error) throw error;
+
+      if (data?.valid === true) {
+        setAttemptsRemaining(null);
+        onSuccess(staff, data.session_token);
+      } else if (data?.reason === 'locked') {
+        setErrorMsg("Account locked for 15 minutes due to too many failed attempts.");
+        setPin("");
+      } else if (data?.reason === 'inactive') {
+        setErrorMsg("This staff account is inactive. Contact your manager.");
+        setPin("");
+      } else {
+        const remaining = data?.attempts_remaining ?? null;
+        setAttemptsRemaining(remaining);
+        if (remaining === 0) {
+          setErrorMsg("Account locked for 15 minutes.");
+        } else {
+          setErrorMsg(remaining !== null ? `Incorrect PIN. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` : "Incorrect PIN.");
+        }
         setShake(true);
         setTimeout(() => setShake(false), 500);
         setPin("");
-      } else {
-        onSuccess(staff);
       }
     } catch (err) {
+      setErrorMsg("Verification failed. Please try again.");
       setShake(true);
       setTimeout(() => setShake(false), 500);
       setPin("");
@@ -101,6 +121,12 @@ export default function PinPadModal({ isOpen, onClose, staff, onSuccess }: PinPa
               />
             ))}
           </div>
+
+          {errorMsg && (
+            <div className="text-[13px] text-[#E24B4A] text-center mb-4 px-4 leading-snug">
+              {errorMsg}
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-y-4 gap-x-6 w-full max-w-[280px]">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
