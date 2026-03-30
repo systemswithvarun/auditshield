@@ -23,24 +23,24 @@ export async function GET(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+            response.cookies.set(name, value, {
+              ...options,
+              path: '/',
+              sameSite: 'lax',
+              secure: true,
+            });
           });
         },
       },
     }
   );
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  console.log('CALLBACK DEBUG - exchange result:', {
-    hasSession: !!data?.session,
-    hasUser: !!data?.user,
-    error: error?.message || null,
-  });
-
-  // Log what cookies were set on the response
-  const setCookies = response.headers.getSetCookie();
-  console.log('CALLBACK DEBUG - cookies being set:', setCookies.length, 'cookies');
+  if (error) {
+    console.error('CALLBACK ERROR:', error.message);
+    return NextResponse.redirect(`${origin}/onboard?error=auth_failed`);
+  }
 
   return response;
 }
