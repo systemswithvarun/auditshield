@@ -377,24 +377,6 @@ export default function OperationalDashboard() {
     }
   };
 
-  if (loading && stations.length === 0) {
-    return (
-      <div className="flex-1 p-8 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#111]" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8">
-        <div className="bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] px-4 py-3 rounded-xl flex items-center gap-3">
-          <AlertCircleIcon size={18} />
-          {error}
-        </div>
-      </div>
-    );
-  }
 
   // Precompute global Missed triggers
   const activeMissesCount = useMemo(() => {
@@ -447,6 +429,30 @@ export default function OperationalDashboard() {
     });
     return Object.values(grouped);
   }, [schedulesToday]);
+
+
+
+  if (loading && stations.length === 0) {
+    return (
+      <div className="flex-1 p-8 flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#111]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] px-4 py-3 rounded-xl flex items-center gap-3">
+          <AlertCircleIcon size={18} />
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+
+
 
   return (
     <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#111110]">
