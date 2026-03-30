@@ -102,7 +102,7 @@ export default function OperationalDashboard() {
       }
     };
     initApp();
-  }, [router]);
+  }, []);
 
   // 2. Load Location specific baseline datsets (Stations, Staff, Today metrics)
   useEffect(() => {
