@@ -10,6 +10,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const [orgSlug, setOrgSlug] = useState("");
+  const [locSlug, setLocSlug] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -18,12 +20,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.push("/login");
       } else {
         const { data: orgData } = await supabase.rpc('get_my_organization');
-        
+
         if (!orgData?.exists) {
           router.replace('/onboard');
           return;
         }
-        
+
+        const { data: slugData } = await supabase
+          .from("locations")
+          .select("slug, organizations(slug)")
+          .eq("organization_id", orgData.org_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (slugData) {
+          setOrgSlug((slugData.organizations as any)?.slug || "");
+          setLocSlug(slugData.slug || "");
+        }
+
         setLoading(false);
       }
     };
@@ -67,7 +81,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <LogOut size={20} />
           </button>
         </div>
-        
+
         <nav className="p-2 md:p-4 flex md:flex-col flex-row gap-1 overflow-x-auto md:flex-1 md:overflow-visible">
           {navLinks.map((link) => {
             const Icon = link.icon;
@@ -76,11 +90,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 py-2 md:py-2.5 rounded-xl text-[12px] md:text-[14px] font-medium transition-colors min-w-[70px] justify-center md:justify-start ${
-                  isActive
-                    ? "bg-[#f5f4f0] text-[#111110]"
-                    : "text-[#6b6b67] hover:bg-[#fcfbf9] hover:text-[#111110]"
-                }`}
+                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 py-2 md:py-2.5 rounded-xl text-[12px] md:text-[14px] font-medium transition-colors min-w-[70px] justify-center md:justify-start ${isActive
+                  ? "bg-[#f5f4f0] text-[#111110]"
+                  : "text-[#6b6b67] hover:bg-[#fcfbf9] hover:text-[#111110]"
+                  }`}
               >
                 <Icon size={18} className={isActive ? "text-[#111110]" : "text-[#888]"} />
                 {link.label}
@@ -89,7 +102,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div className="hidden md:block p-4 border-t border-black/10 mt-auto">
+        <div className="hidden md:block p-4 border-t border-black/10 mt-auto space-y-2">
+          {orgSlug && locSlug && (
+            <Link
+              href={`/${orgSlug}/${locSlug}`}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-white bg-[#111] hover:bg-[#333] transition-colors text-left"
+            >
+              <div className="w-4 h-4 border-[2px] border-white rounded-[3px] shrink-0" />
+              Open Kiosk
+            </Link>
+          )}
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-[#6b6b67] hover:bg-[#FCEBEB] hover:text-[#791F1F] transition-colors text-left group"
