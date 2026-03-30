@@ -52,7 +52,7 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
     if (val === "") return null;
     const num = parseFloat(val);
     if (isNaN(num)) return null;
-    
+
     if (f.min !== undefined && num < f.min) return 'UNSAFE';
     if (f.max !== undefined && num > f.max) return 'UNSAFE';
     return 'SAFE';
@@ -119,7 +119,9 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
         const ds = formData[f.key];
         const entry: Record<string, unknown> = {
           key: f.key,
+          label: f.label,
           value: String(ds.value),
+          unit: f.unit || null,
           status: ds.status,
         };
         if (ds.status === 'UNSAFE' && ds.correctiveAction.trim()) {
@@ -194,7 +196,7 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
       <div className="text-[13px] font-medium text-[#6b6b67] mb-5 tracking-wide">
         {station.label} checklist
       </div>
-      
+
       <div className="flex flex-col gap-6">
         {station.fields.map((f) => {
           const ds = formData[f.key] || { value: "", status: null, correctiveAction: "" };
@@ -253,7 +255,7 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
                   <div className="flex-1">
                     <div className="text-[13px] font-medium text-[#791F1F] mb-1">Safety alert</div>
                     <div className="text-[12px] text-[#791F1F] leading-[1.5] mb-3">{f.warn_msg}</div>
-                    
+
                     <div className="text-[11px] font-semibold text-[#791F1F] opacity-80 mb-1.5 tracking-[0.05em] uppercase">Action Required: Describe corrective steps (e.g., 'Moved stock').</div>
                     <textarea
                       placeholder="Describe what was done to fix this issue..."
@@ -270,11 +272,11 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
       </div>
 
       <div className="h-[1px] bg-black/10 my-7" />
-      
+
       {dbError && (
         <div className="mb-4 p-3 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] text-[13.5px] rounded-xl flex items-start gap-2.5 animate-in fade-in shadow-sm">
-           <AlertCircle size={16} className="shrink-0 mt-[1px]" /> 
-           <div className="leading-[1.4]"><span className="font-bold uppercase tracking-[0.03em] text-[12px] opacity-80 block mb-0.5">Database Error</span> {dbError}</div>
+          <AlertCircle size={16} className="shrink-0 mt-[1px]" />
+          <div className="leading-[1.4]"><span className="font-bold uppercase tracking-[0.03em] text-[12px] opacity-80 block mb-0.5">Database Error</span> {dbError}</div>
         </div>
       )}
 

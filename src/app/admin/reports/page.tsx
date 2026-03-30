@@ -212,7 +212,7 @@ export default function AuditReportsPage() {
               dateTimeStr,
               log.station_name || "Unknown",
               log.staff_name || "Unknown",
-              `${entry.key || 'Reading'}: ${entry.value}`,
+              `${entry.label || entry.key || 'Reading'}: ${entry.value}${entry.unit ? ' ' + entry.unit : ''}`,
               statusText,
               corrective
             ]);
@@ -471,9 +471,9 @@ export default function AuditReportsPage() {
                         <div className="flex flex-col gap-1">
                           {entries.map((entry, i) => (
                             <div key={i} className="text-[13px]">
-                              <span className="text-[#6b6b67]">{entry.key || 'Reading'}:</span>{" "}
+                              <span className="text-[#6b6b67]">{entry.label || entry.key || 'Reading'}:</span>{" "}
                               <span className={`font-medium ${entry.status === 'UNSAFE' ? 'text-[#E24B4A]' : 'text-[#111]'}`}>
-                                {entry.value}
+                                {entry.value}{entry.unit ? ` ${entry.unit}` : ''}
                               </span>
                             </div>
                           ))}
