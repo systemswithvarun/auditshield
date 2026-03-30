@@ -32,8 +32,6 @@ export default function OnboardPage() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
-          skipBrowserRedirect: false,
         }
       });
       if (error) throw new Error(error.message);
