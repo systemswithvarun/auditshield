@@ -15,7 +15,7 @@ type LogRecord = {
   created_at: string;
   logged_at: string;
   is_breach: boolean;
-  entry_data: Array<{ key: string; value: string; status: string; corrective_action?: string }>;
+  entry_data: Array<{ key: string; label?: string; value: string; unit?: string; status: string; corrective_action?: string }>;
   staff_name: string;
   station_name: string;
   location_id: string;
