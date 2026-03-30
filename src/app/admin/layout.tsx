@@ -26,17 +26,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return;
         }
 
-        const { data: slugData } = await supabase
-          .from("locations")
-          .select("slug, organizations(slug)")
-          .eq("organization_id", orgData.org_id)
-          .limit(1)
-          .maybeSingle();
-
-        if (slugData) {
-          setOrgSlug((slugData.organizations as any)?.slug || "");
-          setLocSlug(slugData.slug || "");
-        }
+        setOrgSlug(orgData.slug || "");
+        setLocSlug(orgData.location_slug || "");
 
         setLoading(false);
       }
