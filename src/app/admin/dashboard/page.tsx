@@ -396,31 +396,40 @@ export default function OperationalDashboard() {
     );
   }
 
-  // Precompute global Missed triggers natively validating grace spans
-  const activeMissesCount = schedulesToday.filter(
-    (sc) => {
-      if (sc.status === 'MISSED') return true;
-      if (sc.status === 'PENDING') {
-        const now = new Date();
-        const dEnd = new Date(`${todayStr}T${sc.window_end}`);
-        const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
-        return now > dGrace;
+  // Precompute global Missed triggers
+  const activeMissesCount = useMemo(() => {
+    return schedulesToday.filter(
+      (sc) => {
+        if (sc.status === 'MISSED') return true;
+        if (sc.status === 'PENDING') {
+          const now = new Date();
+          const dEnd = new Date(`${todayStr}T${sc.window_end}`);
+          const dGrace = new Date(dEnd.getTime() + ((sc.grace_period_minutes || 15) * 60000));
+          return now > dGrace;
+        }
+        return false;
       }
-      return false;
-    }
-  ).length;
+    ).length;
+  }, [schedulesToday, todayStr]);
+
+
 
   // Derived Global Status KPI Header
-  const globalKPI = useMemo(() => {
-    if (schedulesToday.length === 0) return { label: 'Awaiting Targets', color: 'bg-[#f5f4f0] text-[#6b6b67] border-black/10', icon: <Activity size={24} /> };
+  const globalKPIState = useMemo(() => {
+    if (schedulesToday.length === 0) return { label: 'Awaiting Targets', color: 'bg-[#f5f4f0] text-[#6b6b67] border-black/10', type: 'awaiting' };
     if (schedulesToday.some(s => s.status === 'MISSED')) {
-      return { label: 'Critical Misses Detected', color: 'bg-[#FFF4F4] text-[#E24B4A] border-[#F09595]', icon: <AlertTriangle size={24} strokeWidth={2.5} /> };
+      return { label: 'Critical Misses Detected', color: 'bg-[#FFF4F4] text-[#E24B4A] border-[#F09595]', type: 'missed' };
     }
     if (schedulesToday.some(s => s.status === 'PENDING')) {
-      return { label: 'Checks Pending', color: 'bg-[#FFF8EB] text-[#AF5B00] border-[#F2C17D]', icon: <Clock size={24} strokeWidth={2.5} /> };
+      return { label: 'Checks Pending', color: 'bg-[#FFF8EB] text-[#AF5B00] border-[#F2C17D]', type: 'pending' };
     }
-    return { label: '100% Compliant', color: 'bg-[#EAF3DE] text-[#3B6D11] border-[#97C459]', icon: <CheckCircle size={24} strokeWidth={2.5} /> };
+    return { label: '100% Compliant', color: 'bg-[#EAF3DE] text-[#3B6D11] border-[#97C459]', type: 'compliant' };
   }, [schedulesToday]);
+
+  const globalKPIIcon = globalKPIState.type === 'missed' ? <AlertTriangle size={24} strokeWidth={2.5} />
+    : globalKPIState.type === 'pending' ? <Clock size={24} strokeWidth={2.5} />
+      : globalKPIState.type === 'compliant' ? <CheckCircle size={24} strokeWidth={2.5} />
+        : <Activity size={24} />;
 
   // Group schedules natively for Compliance Checklist widget
   const schedulesByStation = useMemo(() => {
@@ -494,9 +503,9 @@ export default function OperationalDashboard() {
         </div>
 
         {/* Global KPI Banner */}
-        <div className={`border rounded-2xl p-6 shadow-sm flex items-center justify-center gap-4 transition-colors duration-500 ${globalKPI.color}`}>
-          <span className="shrink-0">{globalKPI.icon}</span>
-          <span className="text-[24px] tracking-tight font-extrabold">{globalKPI.label}</span>
+        <div className={`border rounded-2xl p-6 shadow-sm flex items-center justify-center gap-4 transition-colors duration-500 ${globalKPIState.color}`}>
+          <span className="shrink-0">{globalKPIIcon}</span>
+          <span className="text-[24px] tracking-tight font-extrabold">{globalKPIState.label}</span>
         </div>
       </div>
 
