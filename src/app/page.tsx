@@ -46,7 +46,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/onboard"
-              className="bg-[#22C55E] text-[#002109] px-5 py-2.5 rounded-xl font-extrabold text-sm hover:opacity-90 transition-all active:scale-95 shadow-[0_0_20px_rgba(74,225,118,0.2)]"
+              className="bg-[#0F172A] text-white px-5 py-2.5 rounded-xl font-extrabold text-sm hover:opacity-90 transition-all active:scale-95"
             >
               Get Started
             </Link>
@@ -77,7 +77,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/onboard"
-              className="inline-flex items-center justify-center gap-2 bg-[#22C55E] text-[#002109] px-8 py-4 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 shadow-[0_0_20px_rgba(74,225,118,0.2)]"
+              className="inline-flex items-center justify-center gap-2 bg-[#0F172A] text-white px-8 py-4 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95"
             >
               Start Your Free Trial
               <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_forward</span>
@@ -489,8 +489,8 @@ export default function LandingPage() {
             Predictable Protection.
           </h2>
           <p className="text-[#45464d] text-base md:text-lg font-medium leading-relaxed mb-16">
-            No per-user fees. No setup costs. 30-day free trial. Cancel any
-            time.
+            No per-user fees. No setup costs. Early adopter pricing available
+            — contact us for details.
           </p>
           <div className="grid sm:grid-cols-3 gap-8 items-center">
             {/* Starter */}
@@ -531,9 +531,9 @@ export default function LandingPage() {
               </ul>
               <Link
                 href="/onboard"
-                className="w-full flex items-center justify-center bg-white text-[#0F172A] px-8 py-4 rounded-xl font-extrabold border border-[#0F172A]/20 hover:bg-slate-50 transition-all"
+                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-8 py-4 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95"
               >
-                Select Starter
+                Get Started
               </Link>
             </div>
 
@@ -558,7 +558,7 @@ export default function LandingPage() {
               </div>
               <ul className="flex flex-col gap-3 flex-1 mb-8">
                 {[
-                  "1 location",
+                  "Up to 5 locations",
                   "Unlimited staff & stations",
                   "Advanced reporting",
                   "Custom SOP fields",
@@ -580,9 +580,9 @@ export default function LandingPage() {
               </ul>
               <Link
                 href="/onboard"
-                className="w-full flex items-center justify-center bg-[#22C55E] text-[#002109] px-8 py-4 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 shadow-[0_0_20px_rgba(74,225,118,0.2)]"
+                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-8 py-4 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95"
               >
-                Select Professional
+                Get Started
               </Link>
             </div>
 
@@ -592,17 +592,17 @@ export default function LandingPage() {
                 Multi-Site
               </h3>
               <p className="text-[#45464d] text-sm font-medium mb-5">
-                Chains, franchises, institutional.
+                Chains, franchises, institutional — per location pricing.
               </p>
               <div className="text-5xl font-black tracking-tighter text-[#0d1c2d] mb-6">
                 $399
                 <span className="text-base font-medium text-[#64748b]">
-                  /mo
+                  /location/mo
                 </span>
               </div>
               <ul className="flex flex-col gap-3 flex-1 mb-8">
                 {[
-                  "Multiple locations",
+                  "Unlimited locations",
                   "Unlimited staff",
                   "Cross-location dashboard",
                   "Per-location reports",
@@ -624,9 +624,9 @@ export default function LandingPage() {
               </ul>
               <Link
                 href="/onboard"
-                className="w-full flex items-center justify-center bg-white text-[#0F172A] px-8 py-4 rounded-xl font-extrabold border border-[#0F172A]/20 hover:bg-slate-50 transition-all"
+                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-8 py-4 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95"
               >
-                Select Multi-Site
+                Get Started
               </Link>
             </div>
           </div>
@@ -723,10 +723,10 @@ export default function LandingPage() {
           <p className="text-[#64748b] text-sm font-medium">
             Or email{" "}
             <a
-              href="mailto:varun1200@gmail.com"
+              href="mailto:systemswithvarun@gmail.com"
               className="text-[#2563EB] hover:underline"
             >
-              varun1200@gmail.com
+              systemswithvarun@gmail.com
             </a>{" "}
             to book a demo call
           </p>
@@ -770,10 +770,10 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col gap-2">
                 <a
-                  href="mailto:varun1200@gmail.com"
+                  href="mailto:systemswithvarun@gmail.com"
                   className="text-sm font-medium text-[#64748b] hover:text-[#0d1c2d] transition-colors"
                 >
-                  varun1200@gmail.com
+                  systemswithvarun@gmail.com
                 </a>
                 <p className="text-sm font-medium text-[#64748b]">
                   Alberta, Canada

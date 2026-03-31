@@ -40,7 +40,7 @@ export default function InfoPage() {
             </Link>
             <Link
               href="/onboard"
-              className="bg-[#22C55E] text-[#002109] px-5 py-2.5 rounded-xl font-extrabold text-sm hover:opacity-90 transition-all active:scale-95 shadow-[0_0_20px_rgba(74,225,118,0.2)]"
+              className="bg-[#0F172A] text-white px-5 py-2.5 rounded-xl font-extrabold text-sm hover:opacity-90 transition-all active:scale-95"
             >
               Get Started
             </Link>
@@ -353,8 +353,8 @@ export default function InfoPage() {
             Pricing
           </h2>
           <p className="text-[#45464d] font-medium mb-10">
-            No per-user fees. No setup costs. 30-day free trial. Cancel any
-            time.
+            No per-user fees. No setup costs. Early adopter pricing available
+            — contact us for details.
           </p>
           <div className="grid sm:grid-cols-3 gap-8 items-center">
             {/* Starter */}
@@ -395,9 +395,9 @@ export default function InfoPage() {
               </ul>
               <Link
                 href="/onboard"
-                className="w-full flex items-center justify-center bg-white text-[#0F172A] px-6 py-3 rounded-xl font-extrabold border border-[#0F172A]/20 hover:bg-slate-50 transition-all text-sm"
+                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 text-sm"
               >
-                Select Starter
+                Get Started
               </Link>
             </div>
 
@@ -422,7 +422,7 @@ export default function InfoPage() {
               </div>
               <ul className="flex flex-col gap-2.5 flex-1 mb-6">
                 {[
-                  "1 location",
+                  "Up to 5 locations",
                   "Unlimited staff & stations",
                   "Advanced reporting",
                   "Custom SOP fields",
@@ -444,9 +444,9 @@ export default function InfoPage() {
               </ul>
               <Link
                 href="/onboard"
-                className="w-full flex items-center justify-center bg-[#22C55E] text-[#002109] px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 shadow-[0_0_20px_rgba(74,225,118,0.2)] text-sm"
+                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 text-sm"
               >
-                Select Professional
+                Get Started
               </Link>
             </div>
 
@@ -456,17 +456,17 @@ export default function InfoPage() {
                 Multi-Site
               </h3>
               <p className="text-[#45464d] text-sm font-medium mb-4">
-                Chains, franchises, institutional.
+                Chains, franchises, institutional — per location pricing.
               </p>
               <div className="text-4xl font-black tracking-tighter text-[#0d1c2d] mb-5">
                 $399
                 <span className="text-base font-medium text-[#64748b]">
-                  /mo
+                  /location/mo
                 </span>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1 mb-6">
                 {[
-                  "Multiple locations",
+                  "Unlimited locations",
                   "Unlimited staff",
                   "Cross-location dashboard",
                   "Per-location reports",
@@ -488,9 +488,9 @@ export default function InfoPage() {
               </ul>
               <Link
                 href="/onboard"
-                className="w-full flex items-center justify-center bg-white text-[#0F172A] px-6 py-3 rounded-xl font-extrabold border border-[#0F172A]/20 hover:bg-slate-50 transition-all text-sm"
+                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 text-sm"
               >
-                Select Multi-Site
+                Get Started
               </Link>
             </div>
           </div>
@@ -570,7 +570,7 @@ export default function InfoPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link
               href="/onboard"
-              className="inline-flex items-center justify-center gap-2 bg-[#22C55E] text-[#002109] px-10 py-5 rounded-2xl font-black text-lg hover:opacity-90 transition-all active:scale-95 shadow-[0_0_20px_rgba(74,225,118,0.2)]"
+              className="inline-flex items-center justify-center gap-2 bg-[#0F172A] text-white px-10 py-5 rounded-2xl font-black text-lg hover:opacity-90 transition-all active:scale-95"
             >
               Start Your Free Trial
               <span
@@ -581,7 +581,7 @@ export default function InfoPage() {
               </span>
             </Link>
             <a
-              href="mailto:varun1200@gmail.com?subject=AuditShield Demo Request"
+              href="mailto:systemswithvarun@gmail.com?subject=AuditShield Demo Request"
               className="inline-flex items-center justify-center bg-white/5 text-white border border-white/10 backdrop-blur-md px-10 py-5 rounded-2xl font-extrabold text-lg hover:bg-white/10 transition-all"
             >
               Book a Demo Call
@@ -590,10 +590,10 @@ export default function InfoPage() {
           <p className="text-[#64748b] text-sm font-medium">
             Or email{" "}
             <a
-              href="mailto:varun1200@gmail.com"
+              href="mailto:systemswithvarun@gmail.com"
               className="text-[#4AE176] hover:underline"
             >
-              varun1200@gmail.com
+              systemswithvarun@gmail.com
             </a>{" "}
             directly
           </p>
@@ -651,10 +651,10 @@ export default function InfoPage() {
               </p>
               <div className="flex flex-col gap-2">
                 <a
-                  href="mailto:varun1200@gmail.com"
+                  href="mailto:systemswithvarun@gmail.com"
                   className="text-sm font-medium text-[#64748b] hover:text-[#0d1c2d] transition-colors"
                 >
-                  varun1200@gmail.com
+                  systemswithvarun@gmail.com
                 </a>
                 <p className="text-sm font-medium text-[#64748b]">
                   Alberta, Canada
