@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Varun/.gemini/antigravity/scratch/auditshield -name *Info* -o -name *.html)"
+    ]
+  }
+}

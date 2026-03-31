@@ -18,10 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${dmSans.variable} font-sans antialiased bg-[#f5f4f0] text-[#111110] min-h-screen flex flex-col items-center pt-8 sm:pt-16 pb-8 px-4`}
-      >
+    <html lang="en" className="scroll-smooth">
+      <body className={`${dmSans.variable} font-sans antialiased min-h-screen`}>
         {children}
       </body>
     </html>
