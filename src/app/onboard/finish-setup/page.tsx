@@ -113,34 +113,32 @@ export default function FinishSetupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8f7f4] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-black/50" />
+      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0F172A]/30" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] flex flex-col items-center justify-center p-4 selection:bg-[#EAF3DE] selection:text-[#3B6D11]">
-      <div className="w-full max-w-[440px] bg-white rounded-3xl border border-black/10 overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)] relative animate-in fade-in zoom-in-[0.98] duration-500">
-        <div className="px-8 pt-8 pb-5 border-b border-black/5">
-          <div className="w-[42px] h-[42px] rounded-[11px] bg-[#111] flex items-center justify-center mb-5 shadow-sm">
-            <div className="w-5 h-5 border-[3px] border-white rounded-[4px] relative after:content-[''] after:absolute after:top-[2.5px] after:left-[2.5px] after:w-[6px] after:h-[6px] after:bg-white after:rounded-[1.5px]"></div>
-          </div>
-          <h1 className="text-[22px] font-medium text-[#111110] tracking-tight mb-1.5">Finish your setup</h1>
-          <p className="text-[14px] text-[#6b6b67] leading-[1.5]">You're almost there! Complete your organization profile to proceed.</p>
+    <div className="min-h-screen bg-[#f8f9ff] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-[440px] bg-white rounded-2xl border border-[#c6c6cd]/10 overflow-hidden shadow-sm">
+        <div className="px-8 pt-8 pb-5 border-b border-[#c6c6cd]/20">
+          <p className="text-2xl font-extrabold tracking-tighter text-[#0F172A] mb-5">AuditShield</p>
+          <h1 className="text-xl font-black tracking-tight text-[#0d1c2d] mb-1.5">Finish your setup</h1>
+          <p className="text-sm text-[#45464d] leading-[1.5]">You're almost there! Complete your organization profile to proceed.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 pb-10 flex flex-col gap-5">
           {error && (
-            <div className="p-3.5 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] text-[13px] rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 shadow-sm">
+            <div className="p-3.5 bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-[13px] rounded-xl flex items-start gap-2.5">
               <AlertCircle size={16} className="shrink-0 mt-[1px]" />
               <div className="leading-[1.4]">{error}</div>
             </div>
           )}
 
           <div>
-            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
-              <Building size={14} className="text-[#888]" /> Business Name
+            <label className="text-sm font-semibold text-[#0d1c2d] mb-2 flex items-center gap-2">
+              <Building size={14} className="text-[#94a3b8]" /> Business Name
             </label>
             <input
               type="text"
@@ -148,13 +146,13 @@ export default function FinishSetupPage() {
               placeholder="e.g., Joe's Diner"
               value={formData.businessName}
               onChange={handleInputChange}
-              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[14px] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] focus:bg-[#fcfbf9]"
+              className="w-full h-[46px] bg-white border border-[#c6c6cd] rounded-lg px-4 text-[14px] outline-none transition-colors focus:border-[#2563EB] shadow-sm placeholder:text-[#c6c6cd]"
             />
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
-              <Store size={14} className="text-[#888]" /> Store Location
+            <label className="text-sm font-semibold text-[#0d1c2d] mb-2 flex items-center gap-2">
+              <Store size={14} className="text-[#94a3b8]" /> Store Location
             </label>
             <input
               type="text"
@@ -162,13 +160,13 @@ export default function FinishSetupPage() {
               placeholder="e.g., Downtown Main St"
               value={formData.locationName}
               onChange={handleInputChange}
-              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[14px] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] focus:bg-[#fcfbf9]"
+              className="w-full h-[46px] bg-white border border-[#c6c6cd] rounded-lg px-4 text-[14px] outline-none transition-colors focus:border-[#2563EB] shadow-sm placeholder:text-[#c6c6cd]"
             />
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
-              <KeyRound size={14} className="text-[#888]" /> 4-Digit PIN
+            <label className="text-sm font-semibold text-[#0d1c2d] mb-2 flex items-center gap-2">
+              <KeyRound size={14} className="text-[#94a3b8]" /> 4-Digit PIN
             </label>
             <input
               type="password"
@@ -176,15 +174,15 @@ export default function FinishSetupPage() {
               placeholder="••••"
               value={formData.pin}
               onChange={handleInputChange}
-              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[20px] tracking-[0.2em] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] placeholder:tracking-normal placeholder:text-[14px] focus:bg-[#fcfbf9] text-center"
+              className="w-full h-[46px] bg-white border border-[#c6c6cd] rounded-lg px-4 text-[20px] tracking-[0.2em] outline-none transition-colors focus:border-[#2563EB] shadow-sm placeholder:text-[#c6c6cd] placeholder:tracking-normal placeholder:text-[14px] text-center"
             />
-            <p className="text-[12px] text-[#888] mt-2.5 leading-[1.4]">This PIN is required for the Admin profile on the Kiosk.</p>
+            <p className="text-xs text-[#45464d] mt-2.5 leading-[1.4]">This PIN is required for the Admin profile on the Kiosk.</p>
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-[52px] bg-[#111] text-white rounded-xl text-[15px] font-medium tracking-[-0.2px] transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2 mt-3 shadow-md"
+            className="w-full h-[52px] bg-[#0F172A] text-white rounded-xl text-[15px] font-bold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2 mt-3"
           >
             {submitting ? <><Loader2 size={18} className="animate-spin" /> Provisioning...</> : "Finish Setup"}
           </button>

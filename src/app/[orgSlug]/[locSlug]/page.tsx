@@ -63,7 +63,7 @@ export default function KioskPage() {
              name: name,
              role: d.role || 'Staff Member',
              initials: `${first[0] || ''}${last[0] || ''}`.toUpperCase(),
-             color: "bg-[#EAF3DE] text-[#3B6D11]"
+             color: "bg-[#22C55E]/10 text-[#006e2f]"
            };
         });
       }
@@ -89,8 +89,8 @@ export default function KioskPage() {
             id: st.id,
             label: st.name,
             icon: st.icon || "✓",
-            iconBg: "bg-[#f8f7f4]",
-            iconColor: "text-[#111110]",
+            iconBg: "bg-[#eef4ff]",
+            iconColor: "text-[#0d1c2d]",
             desc: pending.count > 0
               ? `${pending.count} check${pending.count > 1 ? 's' : ''} due`
               : "All checks complete",
@@ -132,24 +132,22 @@ export default function KioskPage() {
   };
 
   return (
-    <div className="w-full max-w-[440px] bg-white rounded-3xl border border-black/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06)] relative isolate flex flex-col">
+    <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4">
+    <div className="w-full max-w-[440px] bg-white rounded-3xl border border-white/10 overflow-hidden shadow-2xl relative isolate flex flex-col">
       {alerts.length > 0 && (
-        <div className="w-full bg-[#FCEBEB] border-b border-[#F09595] text-[#791F1F] text-[13px] font-medium py-2.5 px-4 text-center shrink-0 shadow-sm z-20">
+        <div className="w-full bg-[#ffdad6] border-b border-[#ba1a1a]/20 text-[#ba1a1a] text-[13px] font-medium py-2.5 px-4 text-center shrink-0 z-20">
           ⚠️ {alerts[0]} {alerts.length > 1 && ` (+${alerts.length - 1} more)`}
         </div>
       )}
       {/* Top Bar */}
-      <div className="px-6 pt-5 pb-4 border-b border-black/10 flex items-center gap-3">
-        <div className="w-[34px] h-[34px] rounded-[9px] bg-[#111] flex items-center justify-center shrink-0">
-          <div className="w-4 h-4 border-[2.5px] border-white rounded-[3px] relative after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-1.5 after:h-1.5 after:bg-white after:rounded-[1px]"></div>
-        </div>
+      <div className="px-6 pt-5 pb-4 border-b border-[#c6c6cd]/20 flex items-center gap-3">
         <div className="flex-1">
-          <div className="text-[15px] font-medium text-[#111110] tracking-[-0.3px]">AuditShield</div>
-          <div className="text-[11px] text-[#6b6b67] mt-[1px]">Food Safety Log</div>
+          <div className="text-[15px] font-extrabold tracking-tighter text-[#0F172A]">AuditShield</div>
+          <div className="text-[11px] text-[#45464d] mt-[1px]">Food Safety Log</div>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-[7px] h-[7px] rounded-full bg-[#1D9E75] animate-[pulse_2s_infinite]"></div>
-          <span className="text-xs text-[#6b6b67]">{currentTime}</span>
+          <div className="w-[7px] h-[7px] rounded-full bg-[#22C55E] animate-[pulse_2s_infinite]"></div>
+          <span className="text-xs text-[#45464d]">{currentTime}</span>
         </div>
       </div>
 
@@ -157,7 +155,7 @@ export default function KioskPage() {
       <div className="p-6 pb-10">
         {!loggedInStaff ? (
           <>
-            <div className="text-[11px] font-medium text-[#6b6b67] tracking-[0.07em] uppercase mb-4 pt-2">
+            <div className="text-[11px] font-medium text-[#45464d] tracking-[0.07em] uppercase mb-4 pt-2">
               Staff authentication
             </div>
 
@@ -166,41 +164,41 @@ export default function KioskPage() {
                 <button
                   key={staff.id}
                   onClick={() => handleStaffClick(staff)}
-                  className="flex items-center gap-3 p-3.5 border border-black/10 rounded-xl bg-white cursor-pointer text-left w-full transition-colors hover:border-black/20 hover:bg-[#f8f7f4] group shadow-sm"
+                  className="flex items-center gap-3 p-3.5 border border-[#c6c6cd]/20 rounded-xl bg-white cursor-pointer text-left w-full transition-colors hover:border-[#c6c6cd]/40 hover:bg-[#eef4ff] group shadow-sm"
                 >
                   <div className={`w-[40px] h-[40px] rounded-[10px] flex items-center justify-center text-[15px] font-medium shrink-0 ${staff.color}`}>
                     {staff.initials}
                   </div>
                   <div className="flex-1">
-                    <div className="text-[14px] font-medium text-[#111110] group-hover:text-black">{staff.name}</div>
-                    <div className="text-[12px] text-[#6b6b67] mt-[1px]">{staff.role}</div>
+                    <div className="text-[14px] font-medium text-[#0d1c2d] group-hover:text-[#0F172A]">{staff.name}</div>
+                    <div className="text-[12px] text-[#45464d] mt-[1px]">{staff.role}</div>
                   </div>
-                  <div className="w-[22px] h-[22px] rounded-full border-[1.5px] border-black/20 flex items-center justify-center shrink-0 transition-colors group-hover:border-black/40"></div>
+                  <div className="w-[22px] h-[22px] rounded-full border-[1.5px] border-[#c6c6cd]/40 flex items-center justify-center shrink-0 transition-colors group-hover:border-[#c6c6cd]"></div>
                 </button>
               ))}
             </div>
           </>
         ) : (
           <div className="animate-in fade-in duration-300">
-            <div className="flex items-center justify-between mb-6 bg-[#f8f7f4] p-[10px] rounded-xl border border-black/5">
+            <div className="flex items-center justify-between mb-6 bg-[#eef4ff] p-[10px] rounded-xl border border-[#c6c6cd]/20">
               <div className="flex items-center gap-3 pl-1">
                 <div className={`w-[34px] h-[34px] flex items-center justify-center rounded-lg text-sm font-medium ${loggedInStaff.color}`}>
                   {loggedInStaff.initials}
                 </div>
                 <div>
-                  <div className="text-[13px] font-medium text-[#111110]">{loggedInStaff.name}</div>
-                  <div className="text-[11px] text-[#6b6b67]">{loggedInStaff.role}</div>
+                  <div className="text-[13px] font-medium text-[#0d1c2d]">{loggedInStaff.name}</div>
+                  <div className="text-[11px] text-[#45464d]">{loggedInStaff.role}</div>
                 </div>
               </div>
               <button 
                 onClick={handleLogout}
-                className="w-[34px] h-[34px] flex items-center justify-center text-[#6b6b67] hover:text-[#111110] bg-white hover:bg-[#f0efea] rounded-[10px] border border-black/10 transition-colors shadow-sm"
+                className="w-[34px] h-[34px] flex items-center justify-center text-[#45464d] hover:text-[#0d1c2d] bg-white hover:bg-[#eef4ff] rounded-[10px] border border-[#c6c6cd]/20 transition-colors shadow-sm"
               >
                 <LogOut size={16} className="ml-0.5" />
               </button>
             </div>
 
-            <div className="text-[11px] font-medium text-[#6b6b67] tracking-[0.07em] uppercase mb-4">
+            <div className="text-[11px] font-medium text-[#45464d] tracking-[0.07em] uppercase mb-4">
               Select station
             </div>
             
@@ -211,27 +209,27 @@ export default function KioskPage() {
                   onClick={() => handleStationClick(st)}
                   className={`flex items-center gap-3.5 p-3.5 border rounded-xl cursor-pointer text-left w-full transition-colors ${
                     selectedStation?.id === st.id
-                      ? 'border-[#111] bg-[#f8f7f4] shadow-md'
-                      : 'border-black/10 bg-white hover:border-black/20 hover:bg-[#f8f7f4] shadow-sm'
+                      ? 'border-[#0F172A] bg-[#eef4ff] shadow-md'
+                      : 'border-[#c6c6cd]/20 bg-white hover:border-[#c6c6cd]/40 hover:bg-[#eef4ff] shadow-sm'
                   }`}
                 >
                   <div className={`w-[40px] h-[40px] rounded-[10px] flex items-center justify-center text-[18px] shrink-0 ${st.iconBg} ${st.iconColor}`}>
                     {st.icon}
                   </div>
                   <div className="flex-1 pt-0.5">
-                    <div className="text-[14px] font-medium text-[#111110] tracking-tight">{st.label}</div>
+                    <div className="text-[14px] font-medium text-[#0d1c2d] tracking-tight">{st.label}</div>
                     <div className={`text-[12px] mt-[2px] font-medium ${
                       st.pending_count && st.pending_count > 0
-                        ? 'text-[#854F0B]'
-                        : 'text-[#3B6D11]'
+                        ? 'text-[#f97316]'
+                        : 'text-[#006e2f]'
                     }`}>
                       {st.desc}
                     </div>
                   </div>
                   <div className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-colors ${
-                    selectedStation?.id === st.id 
-                      ? 'bg-[#111] border-[#111] after:content-["✓"] after:text-white after:text-[12px] after:font-medium' 
-                      : 'border-black/20'
+                    selectedStation?.id === st.id
+                      ? 'bg-[#0F172A] border-[#0F172A] after:content-["✓"] after:text-white after:text-[12px] after:font-medium'
+                      : 'border-[#c6c6cd]/40'
                   }`} />
                 </button>
               ))}
@@ -263,6 +261,7 @@ export default function KioskPage() {
           setSelectedStaff(null);
         }}
       />
+    </div>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export default function StaffManager({ locationId }: { locationId: string }) {
   };
 
   return (
-    <div className="bg-[#f8f7f4] border border-black/10 rounded-2xl p-8 mt-8 print:hidden shadow-sm text-[#111110]">
+    <div className="bg-[#f8f9ff] border border-black/10 rounded-2xl p-8 mt-8 print:hidden shadow-sm text-[#0d1c2d]">
       <h2 className="text-[20px] font-bold tracking-tight mb-6">Staff Roster Management</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -101,14 +101,14 @@ export default function StaffManager({ locationId }: { locationId: string }) {
 
         <div className="flex items-center justify-between mt-2">
           <div className="text-[13.5px] font-medium rounded">
-            {errorMsg && <p className="text-[#E24B4A]">{errorMsg}</p>}
+            {errorMsg && <p className="text-[#ba1a1a]">{errorMsg}</p>}
             {successMsg && <p className="text-[#1D9E75]">{successMsg}</p>}
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            className="bg-[#111] text-white rounded-xl h-[48px] px-6 font-medium text-[15px] hover:opacity-85 active:scale-95 disabled:opacity-50 transition-all shadow-md ml-auto"
+            className="bg-[#0F172A] text-white rounded-xl h-[48px] px-6 font-medium text-[15px] hover:opacity-85 active:scale-95 disabled:opacity-50 transition-all shadow-md ml-auto"
           >
             {loading ? "Saving..." : "Add Staff Member"}
           </button>

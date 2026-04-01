@@ -37,8 +37,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8f7f4] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-black/50" />
+      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0F172A]/30" />
       </div>
     );
   }
@@ -58,17 +58,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="flex md:flex-row flex-col min-h-screen bg-[#f8f7f4] selection:bg-[#EAF3DE] selection:text-[#3B6D11]">
+    <div className="flex md:flex-row flex-col min-h-screen bg-[#f8f9ff]">
       {/* Sidebar */}
-      <aside className="w-full md:w-[240px] bg-white border-b md:border-b-0 md:border-r border-black/10 flex flex-col shrink-0 print:hidden relative z-10">
-        <div className="p-4 md:p-6 border-b border-black/10 flex items-center justify-between md:block">
+      <aside className="w-full md:w-[240px] bg-white border-b md:border-b-0 md:border-r border-[#c6c6cd]/20 flex flex-col shrink-0 print:hidden relative z-10">
+        <div className="p-4 md:p-6 border-b border-[#c6c6cd]/20 flex items-center justify-between md:block">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[8px] bg-[#111] flex items-center justify-center shadow-sm">
-              <div className="w-4 h-4 border-[2px] border-white rounded-[3px] relative after:content-[''] after:absolute after:top-[1.5px] after:left-[1.5px] after:w-[4px] after:h-[4px] after:bg-white after:rounded-[1px]"></div>
-            </div>
-            <span className="font-bold tracking-tight text-[#111110]">AuditShield Admin</span>
+            <span className="text-xl font-extrabold tracking-tighter text-[#0F172A]">AuditShield</span>
           </div>
-          <button onClick={handleLogout} className="md:hidden text-[#6b6b67] p-2">
+          <button onClick={handleLogout} className="md:hidden text-[#45464d] p-2">
             <LogOut size={20} />
           </button>
         </div>
@@ -82,22 +79,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={link.href}
                 href={link.href}
                 className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 py-2 md:py-2.5 rounded-xl text-[12px] md:text-[14px] font-medium transition-colors min-w-[70px] justify-center md:justify-start ${isActive
-                  ? "bg-[#f5f4f0] text-[#111110]"
-                  : "text-[#6b6b67] hover:bg-[#fcfbf9] hover:text-[#111110]"
+                  ? "bg-[#eef4ff] text-[#0F172A] font-semibold"
+                  : "text-[#45464d] hover:bg-[#f8f9ff] hover:text-[#0d1c2d]"
                   }`}
               >
-                <Icon size={18} className={isActive ? "text-[#111110]" : "text-[#888]"} />
+                <Icon size={18} className={isActive ? "text-[#0F172A]" : "text-[#94a3b8]"} />
                 {link.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="hidden md:block p-4 border-t border-black/10 mt-auto space-y-2">
+        <div className="hidden md:block p-4 border-t border-[#c6c6cd]/20 mt-auto space-y-2">
           {orgSlug && locSlug && (
             <Link
               href={`/${orgSlug}/${locSlug}`}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-white bg-[#111] hover:bg-[#333] transition-colors text-left"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-white bg-[#0F172A] hover:opacity-90 transition-all text-left"
             >
               <div className="w-4 h-4 border-[2px] border-white rounded-[3px] shrink-0" />
               Open Kiosk
@@ -105,9 +102,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-[#6b6b67] hover:bg-[#FCEBEB] hover:text-[#791F1F] transition-colors text-left group"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-[#45464d] hover:bg-[#ffdad6] hover:text-[#ba1a1a] transition-colors text-left group"
           >
-            <LogOut size={18} className="text-[#888] group-hover:text-[#791F1F] transition-colors" />
+            <LogOut size={18} className="text-[#94a3b8] group-hover:text-[#ba1a1a] transition-colors" />
             Sign Out
           </button>
         </div>

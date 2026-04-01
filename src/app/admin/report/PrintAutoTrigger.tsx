@@ -16,7 +16,7 @@ export default function PrintAutoTrigger() {
       </button>
       <button 
         onClick={() => window.print()}
-        className="flex items-center gap-2 px-5 py-2.5 bg-[#111] hover:bg-gray-800 text-white rounded-[10px] text-[14px] font-medium shadow-md transition-colors"
+        className="flex items-center gap-2 px-5 py-2.5 bg-[#0F172A] hover:bg-gray-800 text-white rounded-[10px] text-[14px] font-medium shadow-md transition-colors"
       >
         <Printer size={18} className="stroke-[2px]" /> Print Official Report
       </button>

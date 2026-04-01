@@ -31,25 +31,25 @@ export default function SetupPage() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white min-h-screen sm:min-h-[auto] sm:my-16 sm:rounded-2xl border-black/10 sm:border shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-8 text-[#111110]">
-      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-black/10">
-        <div className="w-[46px] h-[46px] bg-[#111] rounded-[12px] flex items-center justify-center text-white shrink-0 shadow-md">
+    <div className="w-full max-w-md mx-auto bg-white min-h-screen sm:min-h-[auto] sm:my-16 sm:rounded-2xl border-[#c6c6cd] sm:border shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-8 text-[#0d1c2d]">
+      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-[#c6c6cd]">
+        <div className="w-[46px] h-[46px] bg-[#0F172A] rounded-[12px] flex items-center justify-center text-white shrink-0 shadow-md">
           <TabletSmartphone size={24} className="stroke-[1.5]" />
         </div>
         <div>
           <h1 className="text-[22px] font-medium tracking-tight leading-tight">Device Setup</h1>
-          <p className="text-[#6b6b67] text-[14px]">Provision this tablet</p>
+          <p className="text-[#45464d] text-[14px]">Provision this tablet</p>
         </div>
       </div>
 
       <div className="mb-8">
-        <label className="block text-[12px] font-bold text-[#111110] mb-2.5 uppercase tracking-[0.05em] opacity-80">
+        <label className="block text-[12px] font-bold text-[#0d1c2d] mb-2.5 uppercase tracking-[0.05em] opacity-80">
           Select Location
         </label>
         <select 
           value={selectedLocation}
           onChange={(e) => setSelectedLocation(e.target.value)}
-          className="w-full h-[52px] border border-black/10 rounded-xl px-4 text-[15px] outline-none focus:border-black/30 bg-[#f8f7f4] font-medium shadow-sm transition-colors"
+          className="w-full h-[52px] border border-[#c6c6cd] rounded-xl px-4 text-[15px] outline-none focus:border-[#2563EB] bg-[#f8f9ff] font-medium shadow-sm transition-colors"
         >
           <option value="LOC_HQ">Main Campus HQ (LOC_HQ)</option>
           <option value="LOC_NORTH">Northside Prep Facility (LOC_NORTH)</option>
@@ -59,7 +59,7 @@ export default function SetupPage() {
 
       <button
         onClick={handleSave}
-        className="w-full h-[54px] bg-[#111] text-white rounded-xl text-[16px] font-medium transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-40 shadow-md"
+        className="w-full h-[54px] bg-[#0F172A] text-white rounded-xl text-[16px] font-medium transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-40 shadow-md"
       >
         {saved ? "Saved! Redirecting..." : "Save Configuration"}
       </button>

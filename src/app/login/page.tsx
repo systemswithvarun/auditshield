@@ -72,29 +72,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] flex flex-col items-center justify-center p-4 selection:bg-[#EAF3DE] selection:text-[#3B6D11]">
-      <div className="w-full max-w-[400px] bg-white rounded-3xl border border-black/10 overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)] relative animate-in fade-in zoom-in-[0.98] duration-500">
-        <div className="px-8 pt-8 pb-5 border-b border-black/5">
-          <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-            <div className="w-[42px] h-[42px] rounded-[11px] bg-[#111] flex items-center justify-center mb-5 shadow-sm">
-              <div className="w-5 h-5 border-[3px] border-white rounded-[4px] relative after:content-[''] after:absolute after:top-[2.5px] after:left-[2.5px] after:w-[6px] after:h-[6px] after:bg-white after:rounded-[1.5px]"></div>
-            </div>
-          </Link>
-          <h1 className="text-[22px] font-medium text-[#111110] tracking-tight mb-1.5">Welcome back</h1>
-          <p className="text-[14px] text-[#6b6b67] leading-[1.5]">Log in to your AuditShield dashboard.</p>
+    <div className="min-h-screen bg-[#f8f9ff] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-[400px] mb-4">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#45464d] hover:text-[#0d1c2d] transition-colors">
+          ← Back to Home
+        </Link>
+      </div>
+      <div className="w-full max-w-[400px] bg-white rounded-2xl border border-[#c6c6cd]/10 shadow-sm overflow-hidden">
+        <div className="px-8 pt-8 pb-5 border-b border-[#c6c6cd]/10">
+          <p className="text-2xl font-extrabold tracking-tighter text-[#0F172A] mb-5">AuditShield</p>
+          <h1 className="text-2xl font-black tracking-tight text-[#0d1c2d] mb-1.5">Welcome back</h1>
+          <p className="text-sm text-[#45464d]">Log in to your AuditShield dashboard.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 pb-10 flex flex-col gap-5">
           {error && (
-            <div className="p-3.5 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] text-[13px] rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 shadow-sm">
+            <div className="p-3.5 bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-[13px] rounded-xl flex items-start gap-2.5">
               <AlertCircle size={16} className="shrink-0 mt-[1px]" />
               <div className="leading-[1.4]">{error}</div>
             </div>
           )}
 
           <div>
-            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
-              <Mail size={14} className="text-[#888]" /> Email Address
+            <label className="text-sm font-semibold text-[#0d1c2d] mb-2 flex items-center gap-2">
+              <Mail size={14} className="text-[#94a3b8]" /> Email Address
             </label>
             <input
               type="email"
@@ -102,13 +103,13 @@ export default function LoginPage() {
               placeholder="admin@joesdiner.com"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[14px] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] focus:bg-[#fcfbf9]"
+              className="w-full h-[46px] bg-white border border-[#c6c6cd] rounded-lg px-4 text-[14px] outline-none transition-colors focus:border-[#2563EB] shadow-sm placeholder:text-[#c6c6cd]"
             />
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-[#111110] mb-2 flex items-center gap-2">
-              <Lock size={14} className="text-[#888]" /> Password
+            <label className="text-sm font-semibold text-[#0d1c2d] mb-2 flex items-center gap-2">
+              <Lock size={14} className="text-[#94a3b8]" /> Password
             </label>
             <input
               type="password"
@@ -116,28 +117,28 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full h-[46px] bg-white border border-black/10 rounded-xl px-4 text-[14px] outline-none transition-colors focus:border-black/30 shadow-sm placeholder:text-[#ccc] focus:bg-[#fcfbf9]"
+              className="w-full h-[46px] bg-white border border-[#c6c6cd] rounded-lg px-4 text-[14px] outline-none transition-colors focus:border-[#2563EB] shadow-sm placeholder:text-[#c6c6cd]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-[52px] bg-[#111] text-white rounded-xl text-[15px] font-medium tracking-[-0.2px] transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2 mt-3 shadow-md"
+            className="w-full h-[52px] bg-[#0F172A] text-white rounded-xl text-[15px] font-bold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2 mt-3"
           >
             {loading ? <><Loader2 size={18} className="animate-spin" /> Authenticating...</> : "Log In"}
           </button>
 
           <div className="flex items-center gap-3 my-1">
-            <div className="h-[1px] flex-1 bg-black/5"></div>
-            <span className="text-[11px] text-[#888] font-bold uppercase tracking-wider">Or</span>
-            <div className="h-[1px] flex-1 bg-black/5"></div>
+            <div className="h-[1px] flex-1 bg-[#c6c6cd]/20"></div>
+            <span className="text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider">Or</span>
+            <div className="h-[1px] flex-1 bg-[#c6c6cd]/20"></div>
           </div>
 
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full h-[52px] bg-white border border-black/10 text-[#111110] rounded-xl text-[15px] font-medium tracking-[-0.2px] transition-all hover:bg-[#fcfbf9] active:scale-[0.99] flex items-center justify-center gap-3 shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+            className="w-full h-[52px] bg-white border border-[#c6c6cd] text-[#0d1c2d] rounded-xl text-[15px] font-bold transition-all hover:bg-[#f8f9ff] active:scale-[0.99] flex items-center justify-center gap-3"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.67 15.63 16.86 16.79 15.69 17.57V20.34H19.26C21.34 18.42 22.56 15.58 22.56 12.25Z" fill="#4285F4" />
@@ -148,8 +149,8 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          <p className="text-center text-[13px] text-[#6b6b67] mt-3">
-            Don't have an account? <Link href="/onboard" className="text-[#111110] font-medium hover:underline">Create one</Link>
+          <p className="text-center text-sm text-[#45464d] mt-3">
+            Don't have an account? <Link href="/onboard" className="text-[#2563EB] font-medium hover:underline">Create one</Link>
           </p>
         </form>
       </div>

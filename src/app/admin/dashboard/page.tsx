@@ -398,14 +398,14 @@ export default function OperationalDashboard() {
 
   // Derived Global Status KPI Header
   const globalKPIState = useMemo(() => {
-    if (schedulesToday.length === 0) return { label: 'Awaiting Targets', color: 'bg-[#f5f4f0] text-[#6b6b67] border-black/10', type: 'awaiting' };
+    if (schedulesToday.length === 0) return { label: 'Awaiting Targets', color: 'bg-[#eef4ff] text-[#45464d] border-[#c6c6cd]/20', type: 'awaiting' };
     if (schedulesToday.some(s => s.status === 'MISSED')) {
-      return { label: 'Critical Misses Detected', color: 'bg-[#FFF4F4] text-[#E24B4A] border-[#F09595]', type: 'missed' };
+      return { label: 'Critical Misses Detected', color: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/20', type: 'missed' };
     }
     if (schedulesToday.some(s => s.status === 'PENDING')) {
-      return { label: 'Checks Pending', color: 'bg-[#FFF8EB] text-[#AF5B00] border-[#F2C17D]', type: 'pending' };
+      return { label: 'Checks Pending', color: 'bg-[#f97316]/10 text-[#f97316] border-[#f97316]/20', type: 'pending' };
     }
-    return { label: '100% Compliant', color: 'bg-[#EAF3DE] text-[#3B6D11] border-[#97C459]', type: 'compliant' };
+    return { label: '100% Compliant', color: 'bg-[#22C55E]/10 text-[#006e2f] border-[#22C55E]', type: 'compliant' };
   }, [schedulesToday]);
 
   const globalKPIIcon = globalKPIState.type === 'missed' ? <AlertTriangle size={24} strokeWidth={2.5} />
@@ -435,7 +435,7 @@ export default function OperationalDashboard() {
   if (loading && stations.length === 0) {
     return (
       <div className="flex-1 p-8 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#111]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#0F172A]/30" />
       </div>
     );
   }
@@ -443,7 +443,7 @@ export default function OperationalDashboard() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] px-4 py-3 rounded-xl flex items-center gap-3">
+        <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] px-4 py-3 rounded-xl flex items-center gap-3">
           <AlertCircleIcon size={18} />
           {error}
         </div>
@@ -455,11 +455,11 @@ export default function OperationalDashboard() {
 
 
   return (
-    <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#111110]">
+    <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#0d1c2d]">
 
       {/* Real-time Triage Banner */}
       {!bannerDismissed && activeMissesCount > 0 && (
-        <div className="mb-8 bg-[#E24B4A] text-white rounded-2xl p-5 sm:p-6 shadow-[0_8px_30px_rgba(226,75,74,0.3)] relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+        <div className="mb-8 bg-[#ba1a1a] text-white rounded-2xl p-5 sm:p-6 shadow-[0_8px_30px_rgba(186,26,26,0.3)] relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
             <div className="flex items-center gap-4">
@@ -476,7 +476,7 @@ export default function OperationalDashboard() {
 
             <button
               onClick={() => setBannerDismissed(true)}
-              className="h-10 px-5 bg-white text-[#E24B4A] hover:bg-[#fffcfc] rounded-xl text-[14px] font-bold tracking-wide transition-colors shrink-0 shadow-sm"
+              className="h-10 px-5 bg-white text-[#ba1a1a] hover:bg-[#fffcfc] rounded-xl text-[14px] font-bold tracking-wide transition-colors shrink-0 shadow-sm"
             >
               Acknowledge Alert
             </button>
@@ -489,12 +489,12 @@ export default function OperationalDashboard() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
           <div>
             <h1 className="text-[28px] font-bold tracking-tight mb-1">Operational Control</h1>
-            <p className="text-[#6b6b67] text-[15px]">{org?.name} • Live Fleet Status</p>
+            <p className="text-[#45464d] text-[15px]">{org?.name} • Live Fleet Status</p>
           </div>
 
           {locations.length > 0 && (
             <div className="flex items-center gap-2 bg-white border border-black/10 rounded-xl p-1.5 shadow-sm w-fit">
-              <MapPin size={16} className="text-[#888] ml-2" />
+              <MapPin size={16} className="text-[#94a3b8] ml-2" />
               <select
                 value={activeLocation}
                 onChange={(e) => setActiveLocation(e.target.value)}
@@ -529,13 +529,13 @@ export default function OperationalDashboard() {
 
             <div className="flex flex-col gap-4">
               {schedulesByStation.length === 0 ? (
-                <div className="text-[13px] text-[#888] font-medium py-2">
+                <div className="text-[13px] text-[#94a3b8] font-medium py-2">
                   No schedules configured for today.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {schedulesByStation.map(group => (
-                    <div key={group.stationName} className="border border-black/10 rounded-xl overflow-hidden bg-[#fcfbf9]">
+                    <div key={group.stationName} className="border border-black/10 rounded-xl overflow-hidden bg-[#f8f9ff]">
                       <div className="bg-black/[0.03] border-b border-black/5 px-4 py-2 font-bold text-[14px] flex items-center justify-between">
                         {group.stationName}
                         <span className="text-[11px] font-medium opacity-60 bg-black/5 px-2 py-0.5 rounded-full">{group.schedules.length} logs expected</span>
@@ -544,18 +544,18 @@ export default function OperationalDashboard() {
                       <div className="flex flex-col p-2 space-y-1">
                         {group.schedules.map(sc => {
                           let icon = <span className="w-2.5 h-2.5 rounded-full bg-[#ccc]"></span>; // Pending Default (White/Gray)
-                          let textColor = "text-[#6b6b67]";
+                          let textColor = "text-[#45464d]";
 
                           if (sc.status === 'COMPLETED') {
-                            icon = <span className="w-2.5 h-2.5 rounded-full bg-[#97C459] shadow-[0_0_8px_#97C459]"></span>; // Green
-                            textColor = "text-[#3B6D11] font-bold";
+                            icon = <span className="w-2.5 h-2.5 rounded-full bg-[#22C55E] shadow-[0_0_8px_#22C55E]"></span>; // Green
+                            textColor = "text-[#006e2f] font-bold";
                           } else if (sc.status === 'LATE' || sc.status === 'PENDING') {
                             // We highlight yellow for PENDING effectively identifying something we're waiting on! LATE is also yellow/orange.
                             icon = <span className="w-2.5 h-2.5 rounded-full bg-[#F2C17D] shadow-[0_0_8px_#F2C17D]"></span>; // Yellow
                             textColor = "text-[#AF5B00] font-bold";
                           } else if (sc.status === 'MISSED') {
-                            icon = <span className="w-2.5 h-2.5 rounded-full bg-[#E24B4A] shadow-[0_0_8px_#E24B4A]"></span>; // Red
-                            textColor = "text-[#E24B4A] font-bold";
+                            icon = <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a] shadow-[0_0_8px_#E24B4A]"></span>; // Red
+                            textColor = "text-[#ba1a1a] font-bold";
                           }
 
                           return (
@@ -587,14 +587,14 @@ export default function OperationalDashboard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {stationStatuses.map(st => (
-                <div key={st.id} className="p-4 border border-black/5 bg-[#fcfbf9] rounded-xl flex flex-col gap-3">
+                <div key={st.id} className="p-4 border border-black/5 bg-[#f8f9ff] rounded-xl flex flex-col gap-3">
                   <div className={`flex items-center gap-2 ${st.status === 'DUE_SOON' ? 'text-[#AF5B00]' : ''}`}>
                     <span className="text-[18px]">{st.icon}</span>
                     <span className="font-semibold text-[14px] truncate">{st.name}</span>
                   </div>
                   <div>
                     {st.status === 'PENDING' && (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#6b6b67] bg-black/5 px-2.5 py-1 rounded-md">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#45464d] bg-black/5 px-2.5 py-1 rounded-md">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#888] shrink-0" />
                         Pending
                       </span>
@@ -606,23 +606,23 @@ export default function OperationalDashboard() {
                       </span>
                     )}
                     {st.status === 'SAFE' && (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] border border-[#97C459] px-2.5 py-1 rounded-md">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#006e2f] bg-[#22C55E]/10 border border-[#22C55E] px-2.5 py-1 rounded-md">
                         <CheckCircle size={12} strokeWidth={3} />
                         All Good
                       </span>
                     )}
                     {st.status === 'BREACH' && (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#791F1F] bg-[#FCEBEB] border border-[#F09595] px-2.5 py-1 rounded-md">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#ba1a1a] bg-[#ffdad6] border border-[#ba1a1a]/20 px-2.5 py-1 rounded-md">
                         <AlertTriangle size={12} strokeWidth={3} />
                         Breach Logged
                       </span>
                     )}
                   </div>
-                  <div className="text-[12px] text-[#888] mt-1">{st.logCount} records today</div>
+                  <div className="text-[12px] text-[#94a3b8] mt-1">{st.logCount} records today</div>
                 </div>
               ))}
               {stationStatuses.length === 0 && (
-                <div className="col-span-full py-6 text-center text-[#888] text-[13px]">
+                <div className="col-span-full py-6 text-center text-[#94a3b8] text-[13px]">
                   No stations configured for this location natively.
                 </div>
               )}
@@ -631,9 +631,9 @@ export default function OperationalDashboard() {
 
           {/* Critical Alerts (24h) */}
           {criticalAlerts.length > 0 && (
-            <section className="bg-[#FFF4F4] border border-[#F09595] rounded-2xl p-6 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#E24B4A]"></div>
-              <h2 className="text-[16px] font-bold text-[#791F1F] tracking-tight mb-4 flex items-center gap-2">
+            <section className="bg-[#ffdad6] border border-[#ba1a1a]/20 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#ba1a1a]"></div>
+              <h2 className="text-[16px] font-bold text-[#ba1a1a] tracking-tight mb-4 flex items-center gap-2">
                 <AlertTriangle size={18} strokeWidth={2.5} />
                 Critical Alerts (Last 24 hrs)
               </h2>
@@ -643,19 +643,19 @@ export default function OperationalDashboard() {
                   // unpack the actual unsafe entry
                   const unsafeEntry = alert.entry_data?.find((d: any) => d.status === 'UNSAFE');
                   return (
-                    <div key={alert.id} className="bg-white/80 p-4 rounded-xl border border-[#F09595]/40 text-[14px]">
+                    <div key={alert.id} className="bg-white/80 p-4 rounded-xl border border-[#ba1a1a]/20/40 text-[14px]">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-bold text-[#791F1F]">
-                          {alert.station_name} • <span className="text-[#111]">{unsafeEntry?.value}°</span>
+                        <div className="font-bold text-[#ba1a1a]">
+                          {alert.station_name} • <span className="text-[#0d1c2d]">{unsafeEntry?.value}°</span>
                         </div>
-                        <span className="text-[12px] text-[#791F1F]/70 font-medium">
+                        <span className="text-[12px] text-[#ba1a1a]/70 font-medium">
                           {new Date(alert.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-[13px] text-[#111110] leading-relaxed mb-2">
+                      <p className="text-[13px] text-[#0d1c2d] leading-relaxed mb-2">
                         <span className="font-semibold opacity-70">Corrective Action:</span> {unsafeEntry?.corrective_action || "None provided"}
                       </p>
-                      <div className="text-[11.5px] text-[#6b6b67] font-medium">
+                      <div className="text-[11.5px] text-[#45464d] font-medium">
                         Logged by {alert.staff_name}
                       </div>
                     </div>
@@ -671,7 +671,7 @@ export default function OperationalDashboard() {
         <div className="lg:col-span-1">
           <section className="bg-white rounded-2xl border border-black/10 p-6 h-full shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
             <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
-              <Clock size={18} className="text-[#888]" />
+              <Clock size={18} className="text-[#94a3b8]" />
               Recent Activity
             </h2>
 
@@ -683,15 +683,15 @@ export default function OperationalDashboard() {
 
                 return (
                   <div key={log.id} className="relative pl-8 py-3 group">
-                    <div className={`absolute left-[7px] top-[18px] w-[9px] h-[9px] rounded-full ring-4 ring-white ${isFail ? 'bg-[#E24B4A]' : 'bg-[#97C459]'}`}></div>
-                    <div className="bg-[#fcfbf9] border border-black/5 group-hover:bg-[#f5f4f0] transition-colors rounded-xl p-3">
+                    <div className={`absolute left-[7px] top-[18px] w-[9px] h-[9px] rounded-full ring-4 ring-white ${isFail ? 'bg-[#ba1a1a]' : 'bg-[#22C55E]'}`}></div>
+                    <div className="bg-[#f8f9ff] border border-black/5 group-hover:bg-[#eef4ff] transition-colors rounded-xl p-3">
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-bold text-[13px]">{log.station_name}</span>
-                        <span className={`font-mono text-[13px] font-bold ${isFail ? 'text-[#E24B4A]' : 'text-[#3B6D11]'}`}>
+                        <span className={`font-mono text-[13px] font-bold ${isFail ? 'text-[#ba1a1a]' : 'text-[#006e2f]'}`}>
                           {mainReading}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-[12px] text-[#888]">
+                      <div className="flex justify-between items-center text-[12px] text-[#94a3b8]">
                         <span>{log.staff_name}</span>
                         <span>{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
@@ -700,7 +700,7 @@ export default function OperationalDashboard() {
                 );
               })}
               {recentLogs.length === 0 && (
-                <div className="pl-6 text-[13px] text-[#888]">No activity logged yet.</div>
+                <div className="pl-6 text-[13px] text-[#94a3b8]">No activity logged yet.</div>
               )}
             </div>
           </section>
@@ -709,33 +709,33 @@ export default function OperationalDashboard() {
 
       {/* Filtered Logs Table */}
       <section className="bg-white rounded-2xl border border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.02)] overflow-hidden">
-        <div className="p-6 border-b border-black/10 flex flex-col md:flex-row md:items-end justify-between gap-4 bg-[#fcfbf9]">
+        <div className="p-6 border-b border-black/10 flex flex-col md:flex-row md:items-end justify-between gap-4 bg-[#f8f9ff]">
           <div className="flex-1">
             <h2 className="text-[17px] font-bold tracking-tight mb-1 flex items-center gap-2">
               <FileText size={18} />
               Compliance Record Database
             </h2>
-            <p className="text-[#6b6b67] text-[13px]">Explore historical logs securely.</p>
+            <p className="text-[#45464d] text-[13px]">Explore historical logs securely.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Presets Button Group */}
-            <div className="flex bg-[#fcfbf9] border border-black/15 items-center rounded-lg overflow-hidden h-9 shadow-sm p-1">
+            <div className="flex bg-[#f8f9ff] border border-black/15 items-center rounded-lg overflow-hidden h-9 shadow-sm p-1">
               <button
                 onClick={() => { setFilterPreset('TODAY'); setCurrentPage(1); }}
-                className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'TODAY' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
+                className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'TODAY' ? 'bg-[#0F172A] text-white' : 'text-[#94a3b8] hover:text-[#0d1c2d]'}`}
               >
                 Today
               </button>
               <button
                 onClick={() => { setFilterPreset('WEEK'); setCurrentPage(1); }}
-                className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'WEEK' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
+                className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'WEEK' ? 'bg-[#0F172A] text-white' : 'text-[#94a3b8] hover:text-[#0d1c2d]'}`}
               >
                 This Week
               </button>
               <button
                 onClick={() => { setFilterPreset('CUSTOM'); setCurrentPage(1); }}
-                className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'CUSTOM' ? 'bg-[#111] text-white' : 'text-[#888] hover:text-[#111]'}`}
+                className={`text-[12px] font-bold px-3 py-1 rounded transition-colors ${filterPreset === 'CUSTOM' ? 'bg-[#0F172A] text-white' : 'text-[#94a3b8] hover:text-[#0d1c2d]'}`}
               >
                 Custom
               </button>
@@ -743,13 +743,13 @@ export default function OperationalDashboard() {
 
             {filterPreset === 'CUSTOM' && (
               <div className="flex items-center bg-white border border-black/15 rounded-lg overflow-hidden h-9 shadow-sm animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="px-3 text-[#888] bg-[#f8f7f4] border-r border-black/10 h-full flex items-center"><Calendar size={14} /></div>
+                <div className="px-3 text-[#94a3b8] bg-[#f8f9ff] border-r border-black/10 h-full flex items-center"><Calendar size={14} /></div>
                 <input
                   type="date"
                   max={todayStr}
                   value={filterDate}
                   onChange={e => { setFilterDate(e.target.value); setCurrentPage(1); }}
-                  className="text-[13px] px-3 h-full outline-none font-medium text-[#111]"
+                  className="text-[13px] px-3 h-full outline-none font-medium text-[#0d1c2d]"
                 />
               </div>
             )}
@@ -757,7 +757,7 @@ export default function OperationalDashboard() {
             <select
               value={filterStation}
               onChange={e => { setFilterStation(e.target.value); setCurrentPage(1); }}
-              className="h-9 bg-white border border-black/15 rounded-lg px-3 text-[13px] font-medium text-[#111] outline-none shadow-sm cursor-pointer"
+              className="h-9 bg-white border border-black/15 rounded-lg px-3 text-[13px] font-medium text-[#0d1c2d] outline-none shadow-sm cursor-pointer"
             >
               <option value="">All Stations</option>
               {stations.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
@@ -766,7 +766,7 @@ export default function OperationalDashboard() {
             <select
               value={filterStaff}
               onChange={e => { setFilterStaff(e.target.value); setCurrentPage(1); }}
-              className="h-9 bg-white border border-black/15 rounded-lg px-3 text-[13px] font-medium text-[#111] outline-none shadow-sm cursor-pointer"
+              className="h-9 bg-white border border-black/15 rounded-lg px-3 text-[13px] font-medium text-[#0d1c2d] outline-none shadow-sm cursor-pointer"
             >
               <option value="">All Staff</option>
               {staffList.map(st => <option key={st.id} value={st.id}>{st.full_name}</option>)}
@@ -774,7 +774,7 @@ export default function OperationalDashboard() {
 
             <button
               onClick={handlePrintReport}
-              className="h-9 bg-[#fcfbf9] hover:bg-[#111] text-[#111] hover:text-white border border-black/15 hover:border-[#111] transition-colors rounded-lg px-4 text-[13px] font-bold shadow-sm flex items-center gap-2 ml-auto md:ml-2"
+              className="h-9 bg-[#f8f9ff] hover:bg-[#0F172A] text-[#0d1c2d] hover:text-white border border-black/15 hover:border-[#0F172A] transition-colors rounded-lg px-4 text-[13px] font-bold shadow-sm flex items-center gap-2 ml-auto md:ml-2"
             >
               <Printer size={14} /> Print
             </button>
@@ -789,12 +789,12 @@ export default function OperationalDashboard() {
           )}
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#fcfbf9] border-b border-black/10">
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Time</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Station</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Staff</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Reading</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Status</th>
+              <tr className="bg-[#eef4ff] border-b border-[#c6c6cd]/10">
+                <th className="font-black text-[10px] text-[#45464d] uppercase tracking-widest px-6 py-4">Time</th>
+                <th className="font-black text-[10px] text-[#45464d] uppercase tracking-widest px-6 py-4">Station</th>
+                <th className="font-black text-[10px] text-[#45464d] uppercase tracking-widest px-6 py-4">Staff</th>
+                <th className="font-black text-[10px] text-[#45464d] uppercase tracking-widest px-6 py-4">Reading</th>
+                <th className="font-black text-[10px] text-[#45464d] uppercase tracking-widest px-6 py-4">Status</th>
               </tr>
             </thead>
             <tbody className="text-[14px]">
@@ -803,20 +803,20 @@ export default function OperationalDashboard() {
                 const readingVal = readingObj ? readingObj.value : "—";
 
                 return (
-                  <tr key={log.id} className="border-b border-black/5 last:border-0 hover:bg-[#f8f7f4] transition-colors">
-                    <td className="px-6 py-4 text-[#6b6b67] whitespace-nowrap">
+                  <tr key={log.id} className="border-b border-black/5 last:border-0 hover:bg-[#eef4ff] transition-colors">
+                    <td className="px-6 py-4 text-[#45464d] whitespace-nowrap">
                       {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-6 py-4 font-medium text-[#111]">{log.station_name}</td>
-                    <td className="px-6 py-4 text-[#6b6b67]">{log.staff_name}</td>
+                    <td className="px-6 py-4 font-medium text-[#0d1c2d]">{log.station_name}</td>
+                    <td className="px-6 py-4 text-[#45464d]">{log.staff_name}</td>
                     <td className="px-6 py-4 font-mono font-bold">{readingVal}°</td>
                     <td className="px-6 py-4">
                       {log.is_breach ? (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#791F1F] bg-[#FCEBEB] px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#ba1a1a] bg-[#ffdad6] px-2 py-0.5 rounded">
                           Unsafe
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#006e2f] bg-[#22C55E]/10 px-2 py-0.5 rounded">
                           Safe
                         </span>
                       )}
@@ -825,7 +825,7 @@ export default function OperationalDashboard() {
                 );
               }) : (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-[#888] text-[14px]">
+                  <td colSpan={5} className="py-12 text-center text-[#94a3b8] text-[14px]">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Search size={24} className="opacity-40" />
                       No records found for the selected criteria.
@@ -837,8 +837,8 @@ export default function OperationalDashboard() {
           </table>
         </div>
         {/* Pagination Footer */}
-        <div className="p-4 border-t border-black/10 flex items-center justify-between bg-[#fcfbf9]">
-          <div className="text-[13px] text-[#6b6b67] font-medium">
+        <div className="p-4 border-t border-black/10 flex items-center justify-between bg-[#f8f9ff]">
+          <div className="text-[13px] text-[#45464d] font-medium">
             Showing {totalLogs === 0 ? 0 : (currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalLogs)} of {totalLogs} logs
           </div>
           <div className="flex items-center gap-2">

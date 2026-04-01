@@ -72,12 +72,12 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto bg-white min-h-screen p-8 sm:p-12 sm:my-8 sm:rounded-2xl border-black/10 sm:border shadow-[0_4px_24px_rgba(0,0,0,0.04)] print:m-0 print:p-0 print:border-none print:shadow-none print:min-w-full text-[#111110]">
+    <div className="w-full max-w-6xl mx-auto bg-white min-h-screen p-8 sm:p-12 sm:my-8 sm:rounded-2xl border-black/10 sm:border shadow-[0_4px_24px_rgba(0,0,0,0.04)] print:m-0 print:p-0 print:border-none print:shadow-none print:min-w-full text-[#0d1c2d]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-black/10 print:hidden gap-4">
         <div>
           <h1 className="text-[26px] font-medium tracking-tight">Manager Dashboard</h1>
-          <p className="text-[#6b6b67] text-[14px] mt-1">AuditShield Health Services (AHS) Reporting</p>
+          <p className="text-[#45464d] text-[14px] mt-1">AuditShield Health Services (AHS) Reporting</p>
         </div>
         <PrintButton />
       </div>
@@ -92,7 +92,7 @@ export default async function AdminDashboard() {
       <div className="mt-8">
         <div className="overflow-x-auto border border-black/10 rounded-xl print:border-none print:rounded-none">
           <table className="w-full text-left text-[14px]">
-            <thead className="bg-[#f5f4f0] border-b border-black/10 text-[#6b6b67] text-[13px] print:bg-black print:text-white">
+            <thead className="bg-[#f5f4f0] border-b border-black/10 text-[#45464d] text-[13px] print:bg-black print:text-white">
               <tr>
                 <th className="p-4 font-medium min-w-[150px]">Date & Time</th>
                 <th className="p-4 font-medium min-w-[150px]">Station</th>
@@ -101,25 +101,25 @@ export default async function AdminDashboard() {
                 <th className="p-4 font-medium min-w-[300px]">Readings & Corrective Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/10 text-[#111110] print:divide-black/40">
+            <tbody className="divide-y divide-black/10 text-[#0d1c2d] print:divide-black/40">
               {displayLogs.map((log) => {
                 // Determine row highlight condition
                 const rowClasses = log.isBreach
                   ? "bg-[#fff8f8] hover:bg-[#FFEBEB] print:bg-white print:border-l-4 print:border-[#E24B4A]"
-                  : "bg-white hover:bg-[#f8f7f4] print:bg-white";
+                  : "bg-white hover:bg-[#eef4ff] print:bg-white";
 
                 return (
                   <tr key={log.id} className={`align-top transition-colors ${rowClasses}`}>
                     <td className="p-4 whitespace-nowrap text-[13px]">{new Date(log.performed_at).toLocaleString([], { dateStyle:'short', timeStyle:'short' })}</td>
                     <td className="p-4 font-medium">{log.stationName}</td>
-                    <td className="p-4 text-[#6b6b67] print:text-black/80">{log.staffName}</td>
+                    <td className="p-4 text-[#45464d] print:text-black/80">{log.staffName}</td>
                     <td className="p-4">
                       {log.isBreach ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-bold bg-[#FCEBEB] text-[#791F1F] border border-[#F09595] print:border-none print:p-0 print:uppercase print:tracking-wider print:text-[#E24B4A] print:bg-transparent">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-bold bg-[#ffdad6] text-[#ba1a1a] border border-[#ba1a1a]/20 print:border-none print:p-0 print:uppercase print:tracking-wider print:text-[#ba1a1a] print:bg-transparent">
                           Breach
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-medium bg-[#EAF3DE] text-[#3B6D11] border border-[#97C459] print:border-none print:p-0 print:text-[#3B6D11] print:bg-transparent">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-medium bg-[#22C55E]/10 text-[#006e2f] border border-[#22C55E] print:border-none print:p-0 print:text-[#006e2f] print:bg-transparent">
                           Compliant
                         </span>
                       )}
@@ -129,18 +129,18 @@ export default async function AdminDashboard() {
                         {Object.values(log.entryData).map((f: any, i: number) => (
                           <div key={i} className="flex flex-col">
                             <div className="flex items-center gap-3">
-                              <span className="text-[#6b6b67] print:text-black/80 w-48 text-[13px]">{f.label}</span>
+                              <span className="text-[#45464d] print:text-black/80 w-48 text-[13px]">{f.label}</span>
                               {f.hasBreach ? (
-                                 <span className="font-bold text-[#E24B4A]">{f.value} {f.unit}</span>
+                                 <span className="font-bold text-[#ba1a1a]">{f.value} {f.unit}</span>
                               ) : (
-                                 <span className="font-medium text-[#111110]">{f.value} {f.unit}</span>
+                                 <span className="font-medium text-[#0d1c2d]">{f.value} {f.unit}</span>
                               )}
                             </div>
                             {f.hasBreach && (
-                              <div className="mt-2 ml-14 bg-white/60 border border-[#F09595] px-3 py-2 rounded flex flex-col print:border-l-2 print:border-black print:rounded-none print:bg-transparent print:ml-4">
-                                <span className="text-[10px] font-bold text-[#791F1F] uppercase tracking-[0.05em] mb-[2px] print:text-black">Corrective Action</span>
-                                <span className="text-[#111110] text-[13px] leading-[1.5] font-medium print:text-black">
-                                  {f.correctiveAction ? f.correctiveAction : <span className="text-[#E24B4A] italic">Not Provided</span>}
+                              <div className="mt-2 ml-14 bg-white/60 border border-[#ba1a1a]/20 px-3 py-2 rounded flex flex-col print:border-l-2 print:border-black print:rounded-none print:bg-transparent print:ml-4">
+                                <span className="text-[10px] font-bold text-[#ba1a1a] uppercase tracking-[0.05em] mb-[2px] print:text-black">Corrective Action</span>
+                                <span className="text-[#0d1c2d] text-[13px] leading-[1.5] font-medium print:text-black">
+                                  {f.correctiveAction ? f.correctiveAction : <span className="text-[#ba1a1a] italic">Not Provided</span>}
                                 </span>
                               </div>
                             )}

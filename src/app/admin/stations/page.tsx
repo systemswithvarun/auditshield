@@ -143,7 +143,7 @@ export default function StationsPage() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] px-4 py-3 rounded-xl flex items-center gap-3">
+        <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] px-4 py-3 rounded-xl flex items-center gap-3">
           <AlertCircle size={18} />
           {error}
         </div>
@@ -155,13 +155,13 @@ export default function StationsPage() {
     <div className="max-w-6xl mx-auto p-6 sm:p-10 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[28px] font-medium tracking-tight text-[#111110] mb-1">Stations</h1>
-          <p className="text-[#6b6b67] text-[15px]">Configure operating thresholds for temperature logging.</p>
+          <h1 className="text-[28px] font-medium tracking-tight text-[#0d1c2d] mb-1">Stations</h1>
+          <p className="text-[#45464d] text-[15px]">Configure operating thresholds for temperature logging.</p>
         </div>
         {!isAdding && locations.length > 0 && (
           <button
             onClick={() => setIsAdding(true)}
-            className="h-[42px] bg-[#111] text-white px-5 rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center shadow-sm w-fit"
+            className="h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center shadow-sm w-fit"
           >
             <Plus size={16} className="mr-2" /> Add Station
           </button>
@@ -171,17 +171,17 @@ export default function StationsPage() {
       {isAdding && (
         <div className="bg-white border border-black/10 rounded-2xl p-6 mb-8 shadow-sm">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[16px] font-bold text-[#111110]">New Station Config</h2>
-            <button onClick={() => setIsAdding(false)} className="text-[13px] text-[#6b6b67] hover:text-[#111110] font-medium">Cancel</button>
+            <h2 className="text-[16px] font-bold text-[#0d1c2d]">New Station Config</h2>
+            <button onClick={() => setIsAdding(false)} className="text-[13px] text-[#45464d] hover:text-[#0d1c2d] font-medium">Cancel</button>
           </div>
           <form onSubmit={handleAddSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
             <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Location</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Location</label>
               <select
                 required
                 value={formData.locationId}
                 onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#111110] bg-[#f8f7f4] outline-none focus:border-black/30 transition-colors"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] bg-[#f8f9ff] outline-none focus:border-black/30 transition-colors"
               >
                 <option value="" disabled>Select Locale</option>
                 {locations.map((loc) => (
@@ -190,43 +190,43 @@ export default function StationsPage() {
               </select>
             </div>
             <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Station Name</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Station Name</label>
               <input
                 required
                 type="text"
                 placeholder="Walk-in Fridge"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#111110] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
               />
             </div>
             <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Min Temp (°C)</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Min Temp (°C)</label>
               <input
                 type="number"
                 step="0.1"
                 placeholder="No min"
                 value={formData.minTemp}
                 onChange={(e) => setFormData({ ...formData, minTemp: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#111110] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
               />
             </div>
             <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Max Temp (°C)</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Max Temp (°C)</label>
               <input
                 type="number"
                 step="0.1"
                 placeholder="4.0"
                 value={formData.maxTemp}
                 onChange={(e) => setFormData({ ...formData, maxTemp: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#111110] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
               />
             </div>
             <div className="md:col-span-1">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-[42px] bg-[#111] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center justify-center disabled:opacity-50"
+                className="w-full h-[42px] bg-[#0F172A] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center justify-center disabled:opacity-50"
               >
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : "Save"}
               </button>
@@ -237,18 +237,18 @@ export default function StationsPage() {
 
       {locations.length === 0 ? (
         <div className="bg-white border border-black/10 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-          <MapPin className="text-[#888] mb-3" size={32} />
+          <MapPin className="text-[#94a3b8] mb-3" size={32} />
           <h3 className="font-bold text-[16px] mb-1">No Locations</h3>
-          <p className="text-[14px] text-[#6b6b67] max-w-sm">You must create a location before adding stations.</p>
+          <p className="text-[14px] text-[#45464d] max-w-sm">You must create a location before adding stations.</p>
         </div>
       ) : stations.length > 0 ? (
         <div className="bg-white border border-black/10 rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#fcfbf9] border-b border-black/5">
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Station</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Location</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Targets</th>
+              <tr className="bg-[#f8f9ff] border-b border-black/5">
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Station</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Location</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Targets</th>
               </tr>
             </thead>
             <tbody className="text-[14px]">
@@ -258,17 +258,17 @@ export default function StationsPage() {
                 const max = config?.max !== null && config?.max !== undefined ? config.max : "—";
 
                 return (
-                  <tr key={stat.id} className="border-b border-black/5 last:border-0 hover:bg-[#fcfbf9] transition-colors">
-                    <td className="px-6 py-4 text-[#111110] font-medium flex items-center gap-3">
+                  <tr key={stat.id} className="border-b border-black/5 last:border-0 hover:bg-[#eef4ff] transition-colors">
+                    <td className="px-6 py-4 text-[#0d1c2d] font-medium flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-[#E6F1FB] text-[#245D91] flex items-center justify-center text-[16px]">
                         {stat.icon}
                       </div>
                       {stat.name}
                     </td>
-                    <td className="px-6 py-4 text-[#6b6b67]">
+                    <td className="px-6 py-4 text-[#45464d]">
                       {stat.location?.name}
                     </td>
-                    <td className="px-6 py-4 text-[#6b6b67]">
+                    <td className="px-6 py-4 text-[#45464d]">
                       {config ? (
                          <div className="flex items-center gap-2">
                             <span className="text-[12px] bg-[#f5f4f0] px-2 py-0.5 rounded font-mono">Min: {min}</span>
@@ -286,9 +286,9 @@ export default function StationsPage() {
         </div>
       ) : (
         <div className="bg-white border border-black/10 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-          <Thermometer className="text-[#888] mb-3" size={32} />
+          <Thermometer className="text-[#94a3b8] mb-3" size={32} />
           <h3 className="font-bold text-[16px] mb-1">No Stations Built</h3>
-          <p className="text-[14px] text-[#6b6b67] max-w-sm">Build your first station above to begin logging parameters.</p>
+          <p className="text-[14px] text-[#45464d] max-w-sm">Build your first station above to begin logging parameters.</p>
         </div>
       )}
     </div>

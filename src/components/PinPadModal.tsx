@@ -92,7 +92,7 @@ export default function PinPadModal({ isOpen, onClose, staff, onSuccess }: PinPa
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col items-center justify-end sm:justify-center animate-in fade-in duration-200">
-      <div className={`w-full max-w-[380px] bg-[#111110] sm:rounded-[36px] rounded-t-[36px] pt-8 pb-10 px-6 shadow-2xl relative transition-transform border border-white/10 ${shake ? 'animate-shake' : 'animate-in slide-in-from-bottom-8 sm:zoom-in-95'}`}>
+      <div className={`w-full max-w-[380px] bg-[#0F172A] sm:rounded-[36px] rounded-t-[36px] pt-8 pb-10 px-6 shadow-2xl relative transition-transform border border-white/10 ${shake ? 'animate-shake' : 'animate-in slide-in-from-bottom-8 sm:zoom-in-95'}`}>
         
         <button 
           onClick={onClose}
@@ -123,7 +123,7 @@ export default function PinPadModal({ isOpen, onClose, staff, onSuccess }: PinPa
           </div>
 
           {errorMsg && (
-            <div className="text-[13px] text-[#E24B4A] text-center mb-4 px-4 leading-snug">
+            <div className="text-[13px] text-[#ba1a1a] text-center mb-4 px-4 leading-snug">
               {errorMsg}
             </div>
           )}
@@ -162,7 +162,7 @@ export default function PinPadModal({ isOpen, onClose, staff, onSuccess }: PinPa
               <button
                 onClick={handleSubmit}
                 disabled={loading || pin.length !== 4}
-                className="w-[74px] h-[74px] mx-auto rounded-full text-[#111] bg-white hover:bg-[#f0f0f0] active:scale-95 disabled:bg-white/5 disabled:text-white/30 flex items-center justify-center transition-all touch-manipulation shadow-xl disabled:shadow-none select-none"
+                className="w-[74px] h-[74px] mx-auto rounded-full text-[#002109] font-extrabold bg-[#22C55E] hover:opacity-90 active:scale-95 disabled:bg-white/5 disabled:text-white/30 flex items-center justify-center transition-all touch-manipulation shadow-xl disabled:shadow-none select-none"
               >
                 {loading ? <Loader2 size={26} className="animate-spin" /> : <Check size={32} className="stroke-[2.5]" />}
               </button>

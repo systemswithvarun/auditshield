@@ -166,13 +166,13 @@ export default function ScheduleManager() {
   if (loading && stations.length === 0) {
     return (
       <div className="flex-1 p-8 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#111]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#0d1c2d]" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto p-4 sm:p-8 text-[#111110] animate-in fade-in duration-500 min-h-screen">
+    <div className="max-w-[1000px] mx-auto p-4 sm:p-8 text-[#0d1c2d] animate-in fade-in duration-500 min-h-screen">
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
@@ -180,12 +180,12 @@ export default function ScheduleManager() {
           <h1 className="text-[28px] font-bold tracking-tight mb-1 flex items-center gap-2">
             <CalendarClock className="text-[#245D91]" /> Compliance Schedules
           </h1>
-          <p className="text-[#6b6b67] text-[15px]">Configure operational time windows for automated log checks.</p>
+          <p className="text-[#45464d] text-[15px]">Configure operational time windows for automated log checks.</p>
         </div>
 
         {locations.length > 0 && (
           <div className="flex items-center gap-2 bg-white border border-black/10 rounded-xl p-1.5 shadow-sm w-fit">
-            <MapPin size={16} className="text-[#888] ml-2" />
+            <MapPin size={16} className="text-[#94a3b8] ml-2" />
             <select
               value={activeLocation}
               onChange={(e) => setActiveLocation(e.target.value)}
@@ -200,7 +200,7 @@ export default function ScheduleManager() {
       </div>
 
       {error && (
-        <div className="mb-6 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] px-4 py-3 rounded-xl flex items-center gap-3">
+        <div className="mb-6 bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] px-4 py-3 rounded-xl flex items-center gap-3">
           <AlertCircle size={18} />
           {error}
         </div>
@@ -215,51 +215,51 @@ export default function ScheduleManager() {
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
             <div className="sm:col-span-4">
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Schedule Name</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Schedule Name</label>
               <input
                 type="text"
                 placeholder="e.g. Morning Temp Check"
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f9ff] outline-none"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Target Station</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Target Station</label>
               <select
                 value={newStationId}
                 onChange={e => setNewStationId(e.target.value)}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f9ff] outline-none"
               >
                 {stations.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Window Start</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Window Start</label>
               <input
                 type="time"
                 value={newStart}
                 onChange={e => setNewStart(e.target.value)}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none font-mono"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f9ff] outline-none font-mono"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Window End</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Window End</label>
               <input
                 type="time"
                 value={newEnd}
                 onChange={e => setNewEnd(e.target.value)}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none font-mono"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f9ff] outline-none font-mono"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Grace Period (Mins)</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Grace Period (Mins)</label>
               <input
                 type="number"
                 min="0"
                 value={newGrace}
                 onChange={e => setNewGrace(e.target.value)}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f7f4] outline-none font-mono"
+                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] bg-[#f8f9ff] outline-none font-mono"
               />
             </div>
           </div>
@@ -268,13 +268,13 @@ export default function ScheduleManager() {
             <button
               onClick={handleAddSchedule}
               disabled={isSaving}
-              className="h-[42px] bg-[#111] text-white px-6 rounded-xl font-medium hover:bg-black transition-colors flex items-center gap-2"
+              className="h-[42px] bg-[#0F172A] text-white px-6 rounded-xl font-medium hover:bg-black transition-colors flex items-center gap-2"
             >
               {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Save Schedule Framework"}
             </button>
             <button
               onClick={() => { setIsAdding(false); setError(""); }}
-              className="h-[42px] bg-white border border-black/10 text-[#111] px-6 rounded-xl font-medium hover:bg-[#f8f7f4] transition-colors"
+              className="h-[42px] bg-white border border-black/10 text-[#0d1c2d] px-6 rounded-xl font-medium hover:bg-[#eef4ff] transition-colors"
             >
               Cancel
             </button>
@@ -285,44 +285,44 @@ export default function ScheduleManager() {
           <button
             onClick={() => setIsAdding(true)}
             disabled={stations.length === 0}
-            className="h-[42px] bg-[#111] text-white px-5 rounded-xl text-[14px] font-medium hover:bg-black transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
+            className="h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium hover:bg-black transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
           >
             <Plus size={16} className="mr-2" /> Add New Schedule Matrix
           </button>
           {stations.length === 0 && (
-            <p className="text-[12px] text-[#E24B4A] mt-2 font-medium">You need to create Stations before binding schedules.</p>
+            <p className="text-[12px] text-[#ba1a1a] mt-2 font-medium">You need to create Stations before binding schedules.</p>
           )}
         </div>
       )}
 
       {/* List */}
       <div className="bg-white rounded-2xl border border-black/10 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-black/10 bg-[#fcfbf9]">
+        <div className="p-5 border-b border-black/10 bg-[#f8f9ff]">
           <h2 className="text-[16px] font-bold tracking-tight flex items-center gap-2">
-            <Clock size={18} className="text-[#888]" /> Active Execution Thresholds
+            <Clock size={18} className="text-[#94a3b8]" /> Active Execution Thresholds
           </h2>
         </div>
 
         {schedules.length > 0 ? (
           <div className="divide-y divide-black/5">
             {schedules.map(sc => (
-              <div key={sc.id} className="p-5 flex items-center justify-between hover:bg-[#f8f7f4] transition-colors">
+              <div key={sc.id} className="p-5 flex items-center justify-between hover:bg-[#eef4ff] transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[#EAF3DE] text-[#3B6D11] border border-[#97C459] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#22C55E]/10 text-[#006e2f] border border-[#22C55E] flex items-center justify-center shrink-0">
                     <Clock size={18} />
                   </div>
                   <div>
                     <div className="font-bold text-[15px]">{sc.station.name}</div>
-                    <div className="text-[13px] text-[#6b6b67] font-mono mt-0.5 font-medium">
+                    <div className="text-[13px] text-[#45464d] font-mono mt-0.5 font-medium">
                       {formatTime(sc.window_start)} - {formatTime(sc.window_end)}
-                      <span className="text-[#a8a8a4] ml-2 px-1.5 py-0.5 bg-[#f8f7f4] rounded text-[11px] uppercase tracking-wide">+{sc.grace_period_minutes}m grace</span>
+                      <span className="text-[#a8a8a4] ml-2 px-1.5 py-0.5 bg-[#f8f9ff] rounded text-[11px] uppercase tracking-wide">+{sc.grace_period_minutes}m grace</span>
                     </div>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleDelete(sc.id)}
-                  className="w-9 h-9 flex items-center justify-center text-[#888] hover:text-[#E24B4A] hover:bg-[#FFF4F4] rounded-lg transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-[#94a3b8] hover:text-[#ba1a1a] hover:bg-[#FFF4F4] rounded-lg transition-colors"
                   title="Delete Schedule"
                 >
                   <Trash2 size={16} />
@@ -331,7 +331,7 @@ export default function ScheduleManager() {
             ))}
           </div>
         ) : (
-          <div className="p-12 text-center text-[#888]">
+          <div className="p-12 text-center text-[#94a3b8]">
             <AlertCircle size={32} className="mx-auto mb-3 opacity-20" />
             <p className="text-[14px] font-medium">No master schedules natively mapped to this location.</p>
             <p className="text-[13px] mt-1">Configure intervals to strictly ensure staff enforce Kiosk activity.</p>

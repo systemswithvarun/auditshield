@@ -249,7 +249,7 @@ export default function AuditReportsPage() {
   if (loading) {
     return (
       <div className="flex-1 p-8 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#111]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#0d1c2d]" />
       </div>
     );
   }
@@ -294,7 +294,7 @@ export default function AuditReportsPage() {
   const strokeDashoffset = circumference - (compliancePercent / 100) * circumference;
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 sm:p-8 text-[#111110] animate-in fade-in duration-500 min-h-screen pb-16">
+    <div className="max-w-[1400px] mx-auto p-4 sm:p-8 text-[#0d1c2d] animate-in fade-in duration-500 min-h-screen pb-16">
 
       <div className="print:hidden">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
@@ -302,12 +302,12 @@ export default function AuditReportsPage() {
             <h1 className="text-[28px] font-bold tracking-tight mb-1 flex items-center gap-2">
               <FileSpreadsheet className="text-[#245D91]" /> Compliance Ledger & Reporting
             </h1>
-            <p className="text-[#6b6b67] text-[15px]">Generate operational compliance analytics.</p>
+            <p className="text-[#45464d] text-[15px]">Generate operational compliance analytics.</p>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] px-4 py-3 rounded-xl flex items-center gap-3">
+          <div className="mb-6 bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] px-4 py-3 rounded-xl flex items-center gap-3">
             <AlertCircle size={18} />
             {error}
           </div>
@@ -317,36 +317,36 @@ export default function AuditReportsPage() {
         <div className="bg-white rounded-2xl border border-black/10 p-5 mb-6 shadow-sm flex flex-col md:flex-row flex-wrap gap-4 items-end justify-between">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">Start Date</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Start Date</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#111110] bg-[#f8f7f4] outline-none focus:border-black/30 w-full sm:w-auto"
+                className="h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] bg-[#f8f9ff] outline-none focus:border-black/30 w-full sm:w-auto"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-[#888] uppercase tracking-wider mb-2">End Date</label>
+              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">End Date</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#111110] bg-[#f8f7f4] outline-none focus:border-black/30 w-full sm:w-auto"
+                className="h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] bg-[#f8f9ff] outline-none focus:border-black/30 w-full sm:w-auto"
               />
             </div>
 
             <div className="pt-2">
-              <label className="flex items-center gap-3 cursor-pointer h-[42px] px-4 border border-black/10 rounded-xl bg-white hover:bg-[#f8f7f4] transition-colors">
+              <label className="flex items-center gap-3 cursor-pointer h-[42px] px-4 border border-black/10 rounded-xl bg-white hover:bg-[#eef4ff] transition-colors">
                 <input
                   type="checkbox"
                   checked={showExceptionsOnly}
                   onChange={(e) => setShowExceptionsOnly(e.target.checked)}
                   className="w-4 h-4 accent-[#E24B4A] rounded-md cursor-pointer"
                 />
-                <span className={`text-[14px] font-bold tracking-tight ${showExceptionsOnly ? 'text-[#E24B4A]' : 'text-[#6b6b67]'}`}>
+                <span className={`text-[14px] font-bold tracking-tight ${showExceptionsOnly ? 'text-[#ba1a1a]' : 'text-[#45464d]'}`}>
                   Show Exceptions Only
                 </span>
-                {showExceptionsOnly && <AlertTriangle size={15} className="text-[#E24B4A]" />}
+                {showExceptionsOnly && <AlertTriangle size={15} className="text-[#ba1a1a]" />}
               </label>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function AuditReportsPage() {
             <button
               onClick={exportCSV}
               disabled={logs.length === 0 || isExporting}
-              className="flex-1 md:flex-none h-[42px] bg-white border border-black/10 text-[#111] px-5 rounded-xl text-[14px] font-medium hover:bg-[#f8f7f4] transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
+              className="flex-1 md:flex-none h-[42px] bg-white border border-black/10 text-[#0d1c2d] px-5 rounded-xl text-[14px] font-medium hover:bg-[#eef4ff] transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
             >
               {isExporting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Download size={16} className="mr-2" />}
               {isExporting ? "Exporting..." : "Export CSV"}
@@ -363,7 +363,7 @@ export default function AuditReportsPage() {
             <button
               onClick={exportPDF}
               disabled={logs.length === 0 || isExporting}
-              className="flex-1 md:flex-none h-[42px] bg-[#111] text-white px-5 rounded-xl text-[14px] font-medium hover:bg-black transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
+              className="flex-1 md:flex-none h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium hover:bg-black transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
             >
               {isExporting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Printer size={16} className="mr-2" />}
               {isExporting ? "Loading..." : "Print PDF"}
@@ -388,7 +388,7 @@ export default function AuditReportsPage() {
             </div>
             <div>
               <h2 className="text-[18px] font-bold tracking-tight mb-1">Compliance Target</h2>
-              <p className="text-[13px] text-[#888] mb-3">
+              <p className="text-[13px] text-[#94a3b8] mb-3">
                 {completedChecks} of {totalChecks} logs recorded safely.
               </p>
               {compliancePercent < 90 && topOffenderObj && topOffenderObj.stationCount > 0 && (
@@ -402,21 +402,21 @@ export default function AuditReportsPage() {
           {/* Risk Analysis Card */}
           <div className="bg-white rounded-2xl border border-black/10 p-6 shadow-sm flex flex-col justify-center">
             <h2 className="text-[18px] font-bold tracking-tight mb-4 flex items-center gap-2">
-              <AlertTriangle size={18} className="text-[#E24B4A]" />
+              <AlertTriangle size={18} className="text-[#ba1a1a]" />
               Risk Analysis
             </h2>
             {topOffenderObj && topOffenderObj.stationCount > 0 ? (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-center border-b border-black/5 pb-2">
-                  <span className="text-[13px] text-[#6b6b67] font-bold uppercase tracking-wider">Top Offender</span>
-                  <span className="font-bold text-[#E24B4A] text-[15px]">{topOffenderObj.station}</span>
+                  <span className="text-[13px] text-[#45464d] font-bold uppercase tracking-wider">Top Offender</span>
+                  <span className="font-bold text-[#ba1a1a] text-[15px]">{topOffenderObj.station}</span>
                 </div>
-                <div className="text-[13px] text-[#888]">
+                <div className="text-[13px] text-[#94a3b8]">
                   <strong>{topOffenderObj.stationCount}</strong> breach{topOffenderObj.stationCount !== 1 ? 'es' : ''} logged at this station during this reporting cycle.
                 </div>
               </div>
             ) : (
-              <div className="text-[14px] text-[#3B6D11] font-bold flex items-center gap-2">
+              <div className="text-[14px] text-[#006e2f] font-bold flex items-center gap-2">
                 <CheckCircle size={18} />
                 Zero breaches detected in range!
               </div>
@@ -435,13 +435,13 @@ export default function AuditReportsPage() {
           )}
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="bg-[#fcfbf9] border-b border-black/10">
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Date / Time</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Station</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Staff</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Readings</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Status</th>
-                <th className="font-bold text-[11px] text-[#888] uppercase tracking-wider px-6 py-4">Corrective Action</th>
+              <tr className="bg-[#f8f9ff] border-b border-black/10">
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Date / Time</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Station</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Staff</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Readings</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Status</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Corrective Action</th>
               </tr>
             </thead>
             <tbody className="text-[14px]">
@@ -452,27 +452,27 @@ export default function AuditReportsPage() {
                 return (
                   <tr
                     key={log.id}
-                    className={`border-b border-black/5 last:border-0 transition-colors align-top ${log.is_breach ? 'bg-[#fff8f8] hover:bg-[#FFEBEB]' : 'bg-white hover:bg-[#f8f7f4]'}`}
+                    className={`border-b border-black/5 last:border-0 transition-colors align-top ${log.is_breach ? 'bg-[#fff8f8] hover:bg-[#FFEBEB]' : 'bg-white hover:bg-[#eef4ff]'}`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-medium text-[#111]">
+                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-medium text-[#0d1c2d]">
                       <div>{new Date(log.created_at).toLocaleDateString()}</div>
-                      <div className="text-[#6b6b67] font-normal">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      <div className="text-[#45464d] font-normal">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                     </td>
-                    <td className="px-6 py-4 font-medium text-[#111]">
+                    <td className="px-6 py-4 font-medium text-[#0d1c2d]">
                       {log.station_name || "—"}
                     </td>
-                    <td className="px-6 py-4 text-[#6b6b67]">
+                    <td className="px-6 py-4 text-[#45464d]">
                       {log.staff_name || "—"}
                     </td>
                     <td className="px-6 py-4">
                       {entries.length === 0 ? (
-                        <span className="text-[#888] text-[13px]">—</span>
+                        <span className="text-[#94a3b8] text-[13px]">—</span>
                       ) : (
                         <div className="flex flex-col gap-1">
                           {entries.map((entry, i) => (
                             <div key={i} className="text-[13px]">
-                              <span className="text-[#6b6b67]">{entry.label || entry.key || 'Reading'}:</span>{" "}
-                              <span className={`font-medium ${entry.status === 'UNSAFE' ? 'text-[#E24B4A]' : 'text-[#111]'}`}>
+                              <span className="text-[#45464d]">{entry.label || entry.key || 'Reading'}:</span>{" "}
+                              <span className={`font-medium ${entry.status === 'UNSAFE' ? 'text-[#ba1a1a]' : 'text-[#0d1c2d]'}`}>
                                 {entry.value}{entry.unit ? ` ${entry.unit}` : ''}
                               </span>
                             </div>
@@ -482,18 +482,18 @@ export default function AuditReportsPage() {
                     </td>
                     <td className="px-6 py-4">
                       {log.is_breach ? (
-                        <span className="inline-flex w-fit items-center text-[11px] font-bold uppercase tracking-wide text-[#E24B4A] bg-[#FFF4F4] px-2 py-1 rounded border border-[#F09595]">
+                        <span className="inline-flex w-fit items-center text-[11px] font-bold uppercase tracking-wide text-[#ba1a1a] bg-[#FFF4F4] px-2 py-1 rounded border border-[#ba1a1a]/20">
                           BREACH
                         </span>
                       ) : (
-                        <span className="inline-flex items-center text-[11px] font-bold uppercase tracking-wide text-[#3B6D11] bg-[#EAF3DE] px-2 py-1 rounded border border-[#97C459]">
+                        <span className="inline-flex items-center text-[11px] font-bold uppercase tracking-wide text-[#006e2f] bg-[#22C55E]/10 px-2 py-1 rounded border border-[#22C55E]">
                           SAFE
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-[13px] text-[#111] max-w-[200px]">
+                    <td className="px-6 py-4 text-[13px] text-[#0d1c2d] max-w-[200px]">
                       {correctiveEntries.length === 0 ? (
-                        <span className="text-[#888]">—</span>
+                        <span className="text-[#94a3b8]">—</span>
                       ) : (
                         <div className="flex flex-col gap-1">
                           {correctiveEntries.map((entry, i) => (
@@ -507,7 +507,7 @@ export default function AuditReportsPage() {
               })}
               {logs.length === 0 && !isFetchingLogs && (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-[#888] text-[14px]">
+                  <td colSpan={6} className="py-16 text-center text-[#94a3b8] text-[14px]">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <FileText size={32} className="opacity-30" />
                       No records found matching the requested timeframe.

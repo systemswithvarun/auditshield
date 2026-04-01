@@ -129,16 +129,16 @@ export default function StaffManagement() {
   }
 
   if (error) {
-    return <div className="p-8 text-[#E24B4A]">Error: {error}</div>;
+    return <div className="p-8 text-[#ba1a1a]">Error: {error}</div>;
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 sm:p-10 text-[#111110] animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto p-6 sm:p-10 text-[#0d1c2d] animate-in fade-in duration-500">
       <div className="mb-10">
         <h1 className="text-[28px] font-medium tracking-tight mb-2 flex items-center gap-3">
-          <Users size={28} className="text-[#111]" /> Staff Management
+          <Users size={28} className="text-[#0d1c2d]" /> Staff Management
         </h1>
-        <p className="text-[#6b6b67] text-[15px]">Manage kiosk access and roles for all locations.</p>
+        <p className="text-[#45464d] text-[15px]">Manage kiosk access and roles for all locations.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
@@ -146,7 +146,7 @@ export default function StaffManagement() {
         <div className="bg-white rounded-2xl border border-black/10 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[14px]">
-              <thead className="bg-[#f5f4f0] border-b border-black/10 text-[#6b6b67] text-[13px]">
+              <thead className="bg-[#f5f4f0] border-b border-black/10 text-[#45464d] text-[13px]">
                 <tr>
                   <th className="p-4 font-medium min-w-[200px]">Full Name</th>
                   <th className="p-4 font-medium min-w-[150px]">Role</th>
@@ -156,12 +156,12 @@ export default function StaffManagement() {
               </thead>
               <tbody className="divide-y divide-black/10">
                 {staff.map((member) => (
-                  <tr key={member.id} className="hover:bg-[#f8f7f4] transition-colors">
+                  <tr key={member.id} className="hover:bg-[#eef4ff] transition-colors">
                     <td className="p-4 font-medium">{member.full_name}</td>
-                    <td className="p-4 text-[#6b6b67]">{member.role}</td>
-                    <td className="p-4 text-[#6b6b67]">{member.locations?.name}</td>
+                    <td className="p-4 text-[#45464d]">{member.role}</td>
+                    <td className="p-4 text-[#45464d]">{member.locations?.name}</td>
                     <td className="p-4 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-medium bg-[#EAF3DE] text-[#3B6D11] border border-[#97C459]">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-medium bg-[#22C55E]/10 text-[#006e2f] border border-[#22C55E]">
                         Active
                       </span>
                     </td>
@@ -170,7 +170,7 @@ export default function StaffManagement() {
                 
                 {staff.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-[#6b6b67]">
+                    <td colSpan={4} className="p-8 text-center text-[#45464d]">
                       No staff members found. Add one to get started.
                     </td>
                   </tr>
@@ -181,26 +181,26 @@ export default function StaffManagement() {
         </div>
 
         {/* Quick Add Form */}
-        <div className="bg-[#f8f7f4] border border-black/10 rounded-2xl p-6 shadow-sm sticky top-10">
-          <div className="flex items-center gap-2 mb-6 text-[#111110]">
+        <div className="bg-[#f8f9ff] border border-black/10 rounded-2xl p-6 shadow-sm sticky top-10">
+          <div className="flex items-center gap-2 mb-6 text-[#0d1c2d]">
             <UserPlus size={20} />
             <h2 className="text-[17px] font-bold tracking-tight">Quick Add Staff</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {formError && (
-              <div className="p-3 bg-[#FCEBEB] border border-[#F09595] text-[#791F1F] text-[13px] rounded-xl leading-[1.4]">
+              <div className="p-3 bg-[#ffdad6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-[13px] rounded-xl leading-[1.4]">
                 {formError}
               </div>
             )}
             {formSuccess && (
-              <div className="p-3 bg-[#EAF3DE] border border-[#97C459] text-[#3B6D11] text-[13px] rounded-xl leading-[1.4]">
+              <div className="p-3 bg-[#22C55E]/10 border border-[#22C55E] text-[#006e2f] text-[13px] rounded-xl leading-[1.4]">
                 {formSuccess}
               </div>
             )}
 
             <div>
-              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#888] mb-1.5 block">Full Name</label>
+              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#94a3b8] mb-1.5 block">Full Name</label>
               <input
                 type="text"
                 name="fullName"
@@ -212,7 +212,7 @@ export default function StaffManagement() {
             </div>
 
             <div>
-              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#888] mb-1.5 block">Role</label>
+              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#94a3b8] mb-1.5 block">Role</label>
               <input
                 type="text"
                 name="role"
@@ -224,7 +224,7 @@ export default function StaffManagement() {
             </div>
 
             <div>
-              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#888] mb-1.5 block">Location</label>
+              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#94a3b8] mb-1.5 block">Location</label>
               <select
                 name="locationId"
                 value={formData.locationId}
@@ -238,7 +238,7 @@ export default function StaffManagement() {
             </div>
 
             <div>
-              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#888] mb-1.5 block">4-Digit PIN</label>
+              <label className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#94a3b8] mb-1.5 block">4-Digit PIN</label>
               <input
                 type="password"
                 name="pin"
@@ -252,7 +252,7 @@ export default function StaffManagement() {
             <button
               type="submit"
               disabled={formLoading}
-              className="w-full h-[48px] bg-[#111] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2 mt-2 shadow-md"
+              className="w-full h-[48px] bg-[#0F172A] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2 mt-2 shadow-md"
             >
               {formLoading ? <Loader2 size={18} className="animate-spin" /> : <><Plus size={18} /> Add Staff</>}
             </button>
