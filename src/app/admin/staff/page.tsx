@@ -39,7 +39,7 @@ export default function StaffManagement() {
         .select("*")
         .eq("owner_id", ownerId)
         .single();
-        
+
       if (orgError || !orgData) throw new Error("Failed to load organization.");
       setOrg(orgData);
 
@@ -48,10 +48,10 @@ export default function StaffManagement() {
         .from("locations")
         .select("*")
         .eq("organization_id", orgData.id);
-        
+
       if (locError) throw new Error("Failed to load locations.");
       setLocations(locData || []);
-      
+
       // Default location for form
       if (locData?.length && !formData.locationId) {
         setFormData(prev => ({ ...prev, locationId: locData[0].id }));
@@ -63,7 +63,7 @@ export default function StaffManagement() {
         .select(`*, locations!inner(name, organization_id)`)
         .eq("locations.organization_id", orgData.id)
         .order('full_name', { ascending: true });
-        
+
       if (staffError) throw new Error("Failed to load staff.");
       setStaff(staffData || []);
 
@@ -115,7 +115,7 @@ export default function StaffManagement() {
 
       setFormSuccess(`Successfully added staff member: ${formData.fullName}`);
       setFormData(prev => ({ ...prev, fullName: "", role: "", pin: "" }));
-      
+
       // Refresh staff
       await fetchData();
     } catch (err: any) {
@@ -143,7 +143,7 @@ export default function StaffManagement() {
   const handleDeactivate = async (staffId: string) => {
     const adminCount = activeStaff.filter(s => s.role.toLowerCase() === 'admin').length;
     const isThisAdmin = activeStaff.find(s => s.id === staffId)?.role.toLowerCase() === 'admin';
-    
+
     if (isThisAdmin && adminCount <= 1) {
       setDeactivateError({ id: staffId, message: "Cannot deactivate the only admin account." });
       return;
@@ -231,7 +231,7 @@ export default function StaffManagement() {
                           </div>
                         </div>
                         {deactivateError?.id === member.id && (
-                          <div className="mt-2 text-[13px] text-[#ba1a1a] font-medium text-right">{deactivateError.message}</div>
+                          <div className="mt-2 text-[13px] text-[#ba1a1a] font-medium text-right">{deactivateError?.message}</div>
                         )}
                       </td>
                     ) : (
@@ -251,7 +251,7 @@ export default function StaffManagement() {
                     )}
                   </tr>
                 ))}
-                
+
                 {activeStaff.length === 0 && (
                   <tr>
                     <td colSpan={4} className="p-8 text-center text-[#45464d]">
@@ -262,11 +262,11 @@ export default function StaffManagement() {
               </tbody>
             </table>
           </div>
-          
+
           {/* Inactive Staff Section */}
           {inactiveStaff.length > 0 && (
             <div className="border-t border-black/10">
-              <button 
+              <button
                 onClick={() => setShowInactive(!showInactive)}
                 className="flex items-center justify-between w-full p-4 text-[#45464d] hover:bg-black/5 transition-colors focus:outline-none"
               >
@@ -275,7 +275,7 @@ export default function StaffManagement() {
                 </div>
                 {showInactive ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
-              
+
               {showInactive && (
                 <div className="overflow-x-auto border-t border-black/5">
                   <table className="w-full text-left text-[14px]">
