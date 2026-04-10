@@ -92,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 py-2 md:py-2.5 rounded-xl text-[12px] md:text-[14px] font-medium transition-colors min-w-[70px] justify-center md:justify-start ${isActive
+                className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 py-2 md:py-2.5 rounded-xl text-[12px] md:text-[14px] font-medium transition-colors min-w-[120px] justify-center md:justify-start ${isActive
                   ? "bg-[#0F172A] text-white font-semibold"
                   : "text-[#374151] hover:bg-[#e8edf5] hover:text-[#0F172A]"
                   }`}
