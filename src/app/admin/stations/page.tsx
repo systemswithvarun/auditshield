@@ -33,11 +33,11 @@ export default function StationsPage() {
   });
 
   const ICON_PRESETS = [
-    "🌡️","❄️","🧊","🔥","🍳","🥩","🥗","🥛","🧴","🧽",
-    "🚿","🪣","🧹","📋","✅","⚠️","🔬","💧","🏪","🍽️",
+    "🌡️", "❄️", "🧊", "🔥", "🍳", "🥩", "🥗", "🥛", "🧴", "🧽",
+    "🚿", "🪣", "🧹", "📋", "✅", "⚠️", "🔬", "💧", "🏪", "🍽️",
   ];
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
-  
+
   const [fields, setFields] = useState<{
     localId: string;
     label: string;
@@ -84,7 +84,7 @@ export default function StationsPage() {
 
         if (statErr) throw statErr;
         setStations(statData || []);
-        
+
         if (locData.length === 1) {
           setFormData(prev => ({ ...prev, locationId: locData[0].id }));
         }
@@ -118,7 +118,7 @@ export default function StationsPage() {
     }
 
     setSubmitting(true);
-    
+
     const sopConfig = fields.map((f, index) => {
       const config: any = {
         key: `field_${index}`,
@@ -127,12 +127,12 @@ export default function StationsPage() {
       };
 
       if (f.type === 'temperature' || f.type === 'number') {
-         if (f.unit.trim()) config.unit = f.unit.trim();
-         if (f.min !== "") config.min = Number(f.min);
-         if (f.max !== "") config.max = Number(f.max);
-         if (f.warn_msg.trim()) config.warn_msg = f.warn_msg.trim();
+        if (f.unit.trim()) config.unit = f.unit.trim();
+        if (f.min !== "") config.min = Number(f.min);
+        if (f.max !== "") config.max = Number(f.max);
+        if (f.warn_msg.trim()) config.warn_msg = f.warn_msg.trim();
       } else if (f.type === 'boolean') {
-         if (f.warn_msg.trim()) config.warn_msg = f.warn_msg.trim();
+        if (f.warn_msg.trim()) config.warn_msg = f.warn_msg.trim();
       }
 
       return config;
@@ -151,10 +151,10 @@ export default function StationsPage() {
       if (insertError) throw insertError;
 
       setIsAdding(false);
-      setFormData({ 
-        locationId: locations.length === 1 ? locations[0].id : "", 
-        name: "", 
-        icon: "" 
+      setFormData({
+        locationId: locations.length === 1 ? locations[0].id : "",
+        name: "",
+        icon: ""
       });
       setFields([]);
       await fetchData();
@@ -169,7 +169,7 @@ export default function StationsPage() {
     const newFields = [...fields];
     const prevType = newFields[index].type;
     newFields[index] = { ...newFields[index], ...updates };
-    
+
     if (updates.type && updates.type !== prevType) {
       const t = updates.type;
       if (t === 'temperature') {
@@ -315,11 +315,10 @@ export default function StationsPage() {
                               setFormData({ ...formData, icon: emoji });
                               setIconPickerOpen(false);
                             }}
-                            className={`w-[34px] h-[34px] rounded-lg text-[18px] flex items-center justify-center transition-colors border ${
-                              formData.icon === emoji
+                            className={`w-[34px] h-[34px] rounded-lg text-[18px] flex items-center justify-center transition-colors border ${formData.icon === emoji
                                 ? "bg-[#0F172A] border-[#0F172A]"
                                 : "bg-white border-black/10 hover:bg-[#f8f9ff] hover:border-black/20"
-                            }`}
+                              }`}
                           >
                             {emoji}
                           </button>
@@ -339,116 +338,116 @@ export default function StationsPage() {
             </div>
 
             <div className="flex flex-col gap-4">
-               <h3 className="text-[14px] font-bold text-[#0d1c2d]">Fields</h3>
-               {fields.map((f, i) => (
-                  <div key={f.localId} className="bg-[#f8f9ff] border border-black/5 rounded-xl p-4 flex flex-col gap-4 relative">
-                     {fields.length > 1 && (
-                        <button
-                           type="button"
-                           onClick={() => removeField(i)}
-                           className="absolute top-4 right-4 text-[#94a3b8] hover:text-[#ba1a1a] transition-colors"
-                        >
-                           <X size={18} />
-                        </button>
-                     )}
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-8">
-                        <div>
-                           <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Label</label>
-                           <input
-                              required
-                              type="text"
-                              placeholder="e.g. Temperature reading"
-                              value={f.label}
-                              onChange={(e) => updateField(i, { label: e.target.value })}
-                              className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
-                           />
-                        </div>
-                        <div>
-                           <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Type</label>
-                           <select
-                              value={f.type}
-                              onChange={(e) => updateField(i, { type: e.target.value as FieldType })}
-                              className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] bg-white outline-none focus:border-black/30 transition-colors"
-                           >
-                              <option value="temperature">Temperature (°C)</option>
-                              <option value="number">Number / PPM</option>
-                              <option value="boolean">Yes / No check</option>
-                              <option value="date">Date (e.g. expiry)</option>
-                              <option value="text">Free text / notes</option>
-                           </select>
-                        </div>
-                     </div>
-
-                     {(f.type === 'temperature' || f.type === 'number') && (
-                        <div className="grid grid-cols-3 gap-4 mr-8">
-                           <div>
-                              <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Unit</label>
-                              <input
-                                 type="text"
-                                 placeholder="e.g. PPM, °C"
-                                 value={f.unit}
-                                 onChange={(e) => updateField(i, { unit: e.target.value })}
-                                 className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
-                              />
-                           </div>
-                           <div>
-                              <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Min</label>
-                              <input
-                                 type="number"
-                                 step="any"
-                                 placeholder="No min"
-                                 value={f.min}
-                                 onChange={(e) => updateField(i, { min: e.target.value })}
-                                 className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
-                              />
-                           </div>
-                           <div>
-                              <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Max</label>
-                              <input
-                                 type="number"
-                                 step="any"
-                                 placeholder="No max"
-                                 value={f.max}
-                                 onChange={(e) => updateField(i, { max: e.target.value })}
-                                 className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
-                              />
-                           </div>
-                        </div>
-                     )}
-
-                     {(f.type === 'temperature' || f.type === 'number' || f.type === 'boolean') && (
-                        <div className="mr-8">
-                           <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Warn message</label>
-                           <input
-                              type="text"
-                              required
-                              placeholder="e.g. Value out of safe range — corrective action required."
-                              value={f.warn_msg}
-                              onChange={(e) => updateField(i, { warn_msg: e.target.value })}
-                              className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
-                           />
-                        </div>
-                     )}
+              <h3 className="text-[14px] font-bold text-[#0d1c2d]">Fields</h3>
+              {fields.map((f, i) => (
+                <div key={f.localId} className="bg-[#f8f9ff] border border-black/5 rounded-xl p-4 flex flex-col gap-4 relative">
+                  {fields.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeField(i)}
+                      className="absolute top-4 right-4 text-[#94a3b8] hover:text-[#ba1a1a] transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-8">
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Label</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. Temperature reading"
+                        value={f.label}
+                        onChange={(e) => updateField(i, { label: e.target.value })}
+                        className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Type</label>
+                      <select
+                        value={f.type}
+                        onChange={(e) => updateField(i, { type: e.target.value as FieldType })}
+                        className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] bg-white outline-none focus:border-black/30 transition-colors"
+                      >
+                        <option value="temperature">Temperature (°C)</option>
+                        <option value="number">Number / PPM</option>
+                        <option value="boolean">Yes / No check</option>
+                        <option value="date">Date (e.g. expiry)</option>
+                        <option value="text">Free text / notes</option>
+                      </select>
+                    </div>
                   </div>
-               ))}
 
-               <button
-                  type="button"
-                  onClick={addField}
-                  className="h-[38px] bg-white border border-black/10 text-[#0d1c2d] px-4 rounded-xl text-[13px] font-medium hover:bg-[#f8f9ff] transition-colors flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.02)] justify-center w-full sm:w-fit mt-2"
-               >
-                  <Plus size={14} className="mr-2" /> Add Field
-               </button>
+                  {(f.type === 'temperature' || f.type === 'number') && (
+                    <div className="grid grid-cols-3 gap-4 mr-8">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Unit</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. PPM, °C"
+                          value={f.unit}
+                          onChange={(e) => updateField(i, { unit: e.target.value })}
+                          className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Min</label>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="No min"
+                          value={f.min}
+                          onChange={(e) => updateField(i, { min: e.target.value })}
+                          className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Max</label>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="No max"
+                          value={f.max}
+                          onChange={(e) => updateField(i, { max: e.target.value })}
+                          className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(f.type === 'temperature' || f.type === 'number' || f.type === 'boolean') && (
+                    <div className="mr-8">
+                      <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Warn message</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Value out of safe range — corrective action required."
+                        value={f.warn_msg}
+                        onChange={(e) => updateField(i, { warn_msg: e.target.value })}
+                        className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addField}
+                className="h-[38px] bg-white border border-black/10 text-[#0d1c2d] px-4 rounded-xl text-[13px] font-medium hover:bg-[#f8f9ff] transition-colors flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.02)] justify-center w-full sm:w-fit mt-2"
+              >
+                <Plus size={14} className="mr-2" /> Add Field
+              </button>
             </div>
 
             <div className="pt-4 mt-2 border-t border-black/10 flex justify-end">
-               <button
-                  type="submit"
-                  disabled={submitting}
-                  className="h-[42px] px-8 bg-[#0F172A] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center justify-center disabled:opacity-50 w-full sm:w-auto"
-               >
-                  {submitting ? <Loader2 size={16} className="animate-spin" /> : "Save Station"}
-               </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="h-[42px] px-8 bg-[#0F172A] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center justify-center disabled:opacity-50 w-full sm:w-auto"
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : "Save Station"}
+              </button>
             </div>
           </form>
         </div>
@@ -484,15 +483,15 @@ export default function StationsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-2">
-                       {stat.sop_config && stat.sop_config.length > 0 ? (
-                          stat.sop_config.map((f: any) => (
-                             <span key={f.key} className="text-[12px] bg-[#f5f4f0] text-[#45464d] px-2.5 py-1 rounded-md font-medium border border-black/5 whitespace-nowrap">
-                                {f.label} &middot; {f.type}
-                             </span>
-                          ))
-                       ) : (
-                          <span className="text-[13px] text-[#94a3b8]">No fields configured</span>
-                       )}
+                      {stat.sop_config && stat.sop_config.length > 0 ? (
+                        stat.sop_config.map((f: any) => (
+                          <span key={f.key} className="text-[12px] bg-[#f5f4f0] text-[#45464d] px-2.5 py-1 rounded-md font-medium border border-black/5">
+                            {f.label} &middot; {f.type.charAt(0).toUpperCase() + f.type.slice(1)}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[13px] text-[#94a3b8]">No fields configured</span>
+                      )}
                     </div>
                   </td>
                 </tr>
