@@ -316,8 +316,8 @@ export default function StationsPage() {
                               setIconPickerOpen(false);
                             }}
                             className={`w-[34px] h-[34px] rounded-lg text-[18px] flex items-center justify-center transition-colors border ${formData.icon === emoji
-                                ? "bg-[#0F172A] border-[#0F172A]"
-                                : "bg-white border-black/10 hover:bg-[#f8f9ff] hover:border-black/20"
+                              ? "bg-[#0F172A] border-[#0F172A]"
+                              : "bg-white border-black/10 hover:bg-[#f8f9ff] hover:border-black/20"
                               }`}
                           >
                             {emoji}
@@ -486,7 +486,10 @@ export default function StationsPage() {
                       {stat.sop_config && stat.sop_config.length > 0 ? (
                         stat.sop_config.map((f: any) => (
                           <span key={f.key} className="text-[12px] bg-[#f5f4f0] text-[#45464d] px-2.5 py-1 rounded-md font-medium border border-black/5">
-                            {f.label} &middot; {f.type.charAt(0).toUpperCase() + f.type.slice(1)}
+                            {f.label}
+                            {!f.label.toLowerCase().includes(f.type.toLowerCase()) && (
+                              <> &middot; {f.type.charAt(0).toUpperCase() + f.type.slice(1)}</>
+                            )}
                           </span>
                         ))
                       ) : (
