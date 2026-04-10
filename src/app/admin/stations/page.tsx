@@ -466,7 +466,7 @@ export default function StationsPage() {
               <tr className="bg-[#f8f9ff] border-b border-black/5">
                 <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Station</th>
                 <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Location</th>
-                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4">Targets</th>
+                <th className="font-bold text-[11px] text-[#94a3b8] uppercase tracking-wider px-6 py-4 hidden md:table-cell">Targets</th>
               </tr>
             </thead>
             <tbody className="text-[14px]">
