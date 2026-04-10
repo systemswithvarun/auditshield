@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Loader2, AlertTriangle, CheckCircle, Clock, Calendar, Filter, Printer, AlertCircle as AlertCircleIcon, MapPin, Activity, FileText, BarChart3, Search } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle, Clock, Calendar, Filter, Printer, AlertCircle as AlertCircleIcon, MapPin, Activity, FileText, BarChart3, Search, Volume2, VolumeX } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -50,6 +50,11 @@ export default function OperationalDashboard() {
   const [recentLogs, setRecentLogs] = useState<LogRecord[]>([]);
   const [schedulesToday, setSchedulesToday] = useState<ScheduleInstance[]>([]);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('auditshield_sound_alerts') === 'true';
+  });
+  const [lastAlertedInstances, setLastAlertedInstances] = useState<Set<string>>(new Set());
 
   // Filter states
   const todayStr = new Date().toISOString().split('T')[0];
@@ -216,6 +221,33 @@ export default function OperationalDashboard() {
     return () => clearInterval(intervalId);
   }, [activeLocation]);
 
+  useEffect(() => {
+    if (!soundEnabled || schedulesToday.length === 0) return;
+
+    const newAlerted = new Set(lastAlertedInstances);
+    let shouldPlay = false;
+
+    schedulesToday.forEach(sc => {
+      if (sc.status !== 'PENDING') return;
+      if (newAlerted.has(sc.id)) return;
+
+      const now = new Date();
+      const todayStr = new Date().toISOString().split('T')[0];
+      const windowStart = new Date(`${todayStr}T${sc.window_start}`);
+      const windowEnd = new Date(`${todayStr}T${sc.window_end}`);
+
+      if (now >= windowStart && now <= windowEnd) {
+        newAlerted.add(sc.id);
+        shouldPlay = true;
+      }
+    });
+
+    if (shouldPlay) {
+      playAlertSound();
+      setLastAlertedInstances(newAlerted);
+    }
+  }, [schedulesToday, soundEnabled]);
+
   // 4. Dynamic Filtering Logic for "All Logs" Table
   useEffect(() => {
     if (!activeLocation || !filterDate) return;
@@ -337,7 +369,8 @@ export default function OperationalDashboard() {
         const timeStr = new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateStr = new Date(log.created_at).toLocaleDateString();
         const readingObj = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0] : null;
-        const readingVal = readingObj ? `${readingObj.value}°` : "—";
+        const needsDegree = readingObj && (readingObj.unit === '°C' || readingObj.unit === '°F');
+        const readingVal = readingObj ? `${readingObj.value}${needsDegree ? '°' : readingObj.unit ? ` ${readingObj.unit}` : ''}` : "—";
         const statusText = log.is_breach ? "Breach" : "Safe";
 
         // Store pure string values for autoTable calculations
@@ -454,6 +487,40 @@ export default function OperationalDashboard() {
 
 
 
+  const handleSoundToggle = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem('auditshield_sound_alerts', String(next));
+    if (next) playAlertSound(); // preview the sound when enabling
+  };
+
+  const playAlertSound = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      const playBeep = (startTime: number, freq: number, duration: number) => {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(freq, startTime);
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+
+      const now = ctx.currentTime;
+      playBeep(now, 880, 0.15);
+      playBeep(now + 0.2, 880, 0.15);
+      playBeep(now + 0.4, 1100, 0.25);
+    } catch (e) {
+      console.warn('Audio alert failed:', e);
+    }
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto p-4 sm:p-8 animate-in fade-in duration-500 text-[#0d1c2d]">
 
@@ -493,17 +560,30 @@ export default function OperationalDashboard() {
           </div>
 
           {locations.length > 0 && (
-            <div className="flex items-center gap-2 bg-white border border-black/10 rounded-xl p-1.5 shadow-sm w-fit">
-              <MapPin size={16} className="text-[#94a3b8] ml-2" />
-              <select
-                value={activeLocation}
-                onChange={(e) => setActiveLocation(e.target.value)}
-                className="bg-transparent text-[14px] font-medium outline-none pr-3 cursor-pointer"
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-white border border-black/10 rounded-xl p-1.5 shadow-sm w-fit">
+                <MapPin size={16} className="text-[#94a3b8] ml-2" />
+                <select
+                  value={activeLocation}
+                  onChange={(e) => setActiveLocation(e.target.value)}
+                  className="bg-transparent text-[14px] font-medium outline-none pr-3 cursor-pointer"
+                >
+                  {locations.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleSoundToggle}
+                title={soundEnabled ? "Sound alerts on — click to disable" : "Sound alerts off — click to enable"}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[13px] font-medium transition-colors shadow-sm ${soundEnabled
+                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    : 'bg-white text-[#45464d] border-black/10 hover:border-black/20'
+                  }`}
               >
-                {locations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
-              </select>
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                <span className="hidden sm:inline">{soundEnabled ? 'Alerts On' : 'Alerts Off'}</span>
+              </button>
             </div>
           )}
         </div>
@@ -521,7 +601,7 @@ export default function OperationalDashboard() {
         <div className="lg:col-span-2 flex flex-col gap-6">
 
           {/* Compliance Checklist Grouped View */}
-          <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+          <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
             <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
               <BarChart3 size={18} className="text-[#97C459]" />
               Compliance Checklist
@@ -535,8 +615,8 @@ export default function OperationalDashboard() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {schedulesByStation.map(group => (
-                    <div key={group.stationName} className="border border-black/10 rounded-xl overflow-hidden bg-[#f8f9ff]">
-                      <div className="bg-black/[0.03] border-b border-black/5 px-4 py-2 font-bold text-[14px] flex items-center justify-between">
+                    <div key={group.stationName} className="border border-[#cbd5e1] rounded-xl overflow-hidden bg-[#f1f5f9]">
+                      <div className="bg-[#e2e8f0] border-b border-[#cbd5e1] px-4 py-2 font-bold text-[14px] flex items-center justify-between">
                         {group.stationName}
                         <span className="text-[11px] font-medium opacity-60 bg-black/5 px-2 py-0.5 rounded-full">{group.schedules.length} logs expected</span>
                       </div>
@@ -579,7 +659,7 @@ export default function OperationalDashboard() {
           </section>
 
           {/* Today View */}
-          <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+          <section className="bg-white rounded-2xl border border-black/10 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
             <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
               <Activity size={18} className="text-[#245D91]" />
               Today's Station Status
@@ -587,15 +667,15 @@ export default function OperationalDashboard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {stationStatuses.map(st => (
-                <div key={st.id} className="p-4 border border-black/5 bg-[#f8f9ff] rounded-xl flex flex-col gap-3">
+                <div key={st.id} className="p-4 border border-[#cbd5e1] bg-[#f1f5f9] rounded-xl flex flex-col gap-3">
                   <div className={`flex items-center gap-2 ${st.status === 'DUE_SOON' ? 'text-[#AF5B00]' : ''}`}>
                     <span className="text-[18px]">{st.icon}</span>
                     <span className="font-semibold text-[14px] truncate">{st.name}</span>
                   </div>
                   <div>
                     {st.status === 'PENDING' && (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#45464d] bg-black/5 px-2.5 py-1 rounded-md">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#888] shrink-0" />
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#374151] bg-[#e2e8f0] border border-[#cbd5e1] px-2.5 py-1 rounded-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#64748b] shrink-0" />
                         Pending
                       </span>
                     )}
@@ -669,7 +749,7 @@ export default function OperationalDashboard() {
 
         {/* Right Column: Recent Activity Log */}
         <div className="lg:col-span-1">
-          <section className="bg-white rounded-2xl border border-black/10 p-6 h-full shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+          <section className="bg-white rounded-2xl border border-black/10 p-6 h-full shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
             <h2 className="text-[17px] font-bold tracking-tight mb-5 flex items-center gap-2">
               <Clock size={18} className="text-[#94a3b8]" />
               Recent Activity
@@ -684,7 +764,7 @@ export default function OperationalDashboard() {
                 return (
                   <div key={log.id} className="relative pl-8 py-3 group">
                     <div className={`absolute left-[7px] top-[18px] w-[9px] h-[9px] rounded-full ring-4 ring-white ${isFail ? 'bg-[#ba1a1a]' : 'bg-[#22C55E]'}`}></div>
-                    <div className="bg-[#f8f9ff] border border-black/5 group-hover:bg-[#eef4ff] transition-colors rounded-xl p-3">
+                    <div className="bg-[#f1f5f9] border border-[#cbd5e1] group-hover:bg-[#e8edf5] transition-colors rounded-xl p-3">
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-bold text-[13px]">{log.station_name}</span>
                         <span className={`font-mono text-[13px] font-bold ${isFail ? 'text-[#ba1a1a]' : 'text-[#006e2f]'}`}>
@@ -708,7 +788,7 @@ export default function OperationalDashboard() {
       </div>
 
       {/* Filtered Logs Table */}
-      <section className="bg-white rounded-2xl border border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.02)] overflow-hidden">
+      <section className="bg-white rounded-2xl border border-black/10 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="p-6 border-b border-black/10 flex flex-col md:flex-row md:items-end justify-between gap-4 bg-[#f8f9ff]">
           <div className="flex-1">
             <h2 className="text-[17px] font-bold tracking-tight mb-1 flex items-center gap-2">
@@ -800,7 +880,8 @@ export default function OperationalDashboard() {
             <tbody className="text-[14px]">
               {filteredLogs.length > 0 ? filteredLogs.map(log => {
                 const readingObj = log.entry_data && log.entry_data.length > 0 ? log.entry_data[0] : null;
-                const readingVal = readingObj ? readingObj.value : "—";
+                const needsDeg = readingObj && (readingObj.unit === '°C' || readingObj.unit === '°F');
+                const readingVal = readingObj ? `${readingObj.value}${needsDeg ? '°' : readingObj.unit ? ` ${readingObj.unit}` : ''}` : "—";
 
                 return (
                   <tr key={log.id} className="border-b border-black/5 last:border-0 hover:bg-[#eef4ff] transition-colors">
@@ -809,7 +890,7 @@ export default function OperationalDashboard() {
                     </td>
                     <td className="px-6 py-4 font-medium text-[#0d1c2d]">{log.station_name}</td>
                     <td className="px-6 py-4 text-[#45464d]">{log.staff_name}</td>
-                    <td className="px-6 py-4 font-mono font-bold">{readingVal}°</td>
+                    <td className="px-6 py-4 font-mono font-bold">{readingVal}</td>
                     <td className="px-6 py-4">
                       {log.is_breach ? (
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#ba1a1a] bg-[#ffdad6] px-2 py-0.5 rounded">

@@ -34,16 +34,16 @@ export default function InfoPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors border border-slate-300 px-4 py-2 rounded-xl"
             >
               Login
             </Link>
-            <Link
-              href="/onboard"
+            <a
+              href="mailto:systemswithvarun@gmail.com?subject=AuditShield Access Request"
               className="bg-[#0F172A] text-white px-5 py-2.5 rounded-xl font-extrabold text-sm hover:opacity-90 transition-all active:scale-95"
             >
-              Get Started
-            </Link>
+              Request Access
+            </a>
           </div>
         </div>
       </nav>
@@ -358,7 +358,7 @@ export default function InfoPage() {
           </p>
           <div className="grid sm:grid-cols-3 gap-8 items-center">
             {/* Starter */}
-            <div className="bg-white p-7 rounded-2xl border border-[#c6c6cd]/20 shadow-sm flex flex-col">
+            <div className="bg-white p-7 rounded-2xl border border-slate-300 shadow-md flex flex-col">
               <h3 className="font-black text-[#0d1c2d] text-xl mb-1">
                 Starter
               </h3>
@@ -393,12 +393,12 @@ export default function InfoPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/onboard"
+              <a
+                href="mailto:systemswithvarun@gmail.com?subject=AuditShield Access Request — Starter"
                 className="w-full flex items-center justify-center bg-[#0F172A] text-white px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 text-sm"
               >
-                Get Started
-              </Link>
+                Request Access
+              </a>
             </div>
 
             {/* Professional */}
@@ -442,16 +442,16 @@ export default function InfoPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/onboard"
-                className="w-full flex items-center justify-center bg-[#0F172A] text-white px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 text-sm"
+              <a
+                href="mailto:systemswithvarun@gmail.com?subject=AuditShield Access Request — Professional"
+                className="w-full flex items-center justify-center bg-white text-[#0F172A] px-6 py-3 rounded-xl font-extrabold hover:bg-slate-100 transition-all active:scale-95 text-sm"
               >
-                Get Started
-              </Link>
+                Request Access
+              </a>
             </div>
 
             {/* Multi-Site */}
-            <div className="bg-white p-7 rounded-2xl border border-[#c6c6cd]/20 shadow-sm flex flex-col">
+            <div className="bg-white p-7 rounded-2xl border border-slate-300 shadow-md flex flex-col">
               <h3 className="font-black text-[#0d1c2d] text-xl mb-1">
                 Multi-Site
               </h3>
@@ -486,12 +486,12 @@ export default function InfoPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/onboard"
+              <a
+                href="mailto:systemswithvarun@gmail.com?subject=AuditShield Access Request — Multi-Site"
                 className="w-full flex items-center justify-center bg-[#0F172A] text-white px-6 py-3 rounded-xl font-extrabold hover:opacity-90 transition-all active:scale-95 text-sm"
               >
-                Get Started
-              </Link>
+                Request Access
+              </a>
             </div>
           </div>
         </div>
@@ -568,18 +568,13 @@ export default function InfoPage() {
             product running on your screen.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link
-              href="/onboard"
+            <a
+              href="mailto:systemswithvarun@gmail.com?subject=AuditShield Access Request"
               className="inline-flex items-center justify-center gap-2 bg-[#0F172A] text-white px-10 py-5 rounded-2xl font-black text-lg hover:opacity-90 transition-all active:scale-95"
             >
-              Start Your Free Trial
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "20px" }}
-              >
-                arrow_forward
-              </span>
-            </Link>
+              Request Access
+              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_forward</span>
+            </a>
             <a
               href="mailto:systemswithvarun@gmail.com?subject=AuditShield Demo Request"
               className="inline-flex items-center justify-center bg-white/5 text-white border border-white/10 backdrop-blur-md px-10 py-5 rounded-2xl font-extrabold text-lg hover:bg-white/10 transition-all"

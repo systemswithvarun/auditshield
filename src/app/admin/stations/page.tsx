@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Plus, Thermometer, AlertCircle, MapPin } from "lucide-react";
+import { Loader2, Plus, Thermometer, AlertCircle, MapPin, X } from "lucide-react";
+
+type FieldType = 'temperature' | 'number' | 'boolean' | 'date' | 'text';
 
 type Station = {
   id: string;
@@ -27,9 +29,24 @@ export default function StationsPage() {
   const [formData, setFormData] = useState({
     locationId: "",
     name: "",
-    minTemp: "",
-    maxTemp: "",
+    icon: "",
   });
+
+  const ICON_PRESETS = [
+    "🌡️","❄️","🧊","🔥","🍳","🥩","🥗","🥛","🧴","🧽",
+    "🚿","🪣","🧹","📋","✅","⚠️","🔬","💧","🏪","🍽️",
+  ];
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  
+  const [fields, setFields] = useState<{
+    localId: string;
+    label: string;
+    type: FieldType;
+    unit: string;
+    min: string;
+    max: string;
+    warn_msg: string;
+  }[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -88,22 +105,38 @@ export default function StationsPage() {
       return;
     }
 
+    if (fields.length === 0) {
+      alert("At least one field is required.");
+      return;
+    }
+
+    for (const f of fields) {
+      if (!f.label.trim()) {
+        alert("Every field must have a label.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     
-    const minVal = formData.minTemp ? parseFloat(formData.minTemp) : null;
-    const maxVal = formData.maxTemp ? parseFloat(formData.maxTemp) : null;
+    const sopConfig = fields.map((f, index) => {
+      const config: any = {
+        key: `field_${index}`,
+        label: f.label.trim(),
+        type: f.type,
+      };
 
-    const sopConfig = [
-      {
-        id: "temp1",
-        label: "Temperature reading",
-        unit: "°C",
-        type: "temp",
-        min: minVal,
-        max: maxVal,
-        warnMsg: "Temperature is out of the safe range. Ensure immediate corrective action."
+      if (f.type === 'temperature' || f.type === 'number') {
+         if (f.unit.trim()) config.unit = f.unit.trim();
+         if (f.min !== "") config.min = Number(f.min);
+         if (f.max !== "") config.max = Number(f.max);
+         if (f.warn_msg.trim()) config.warn_msg = f.warn_msg.trim();
+      } else if (f.type === 'boolean') {
+         if (f.warn_msg.trim()) config.warn_msg = f.warn_msg.trim();
       }
-    ];
+
+      return config;
+    });
 
     try {
       const { error: insertError } = await supabase
@@ -111,7 +144,7 @@ export default function StationsPage() {
         .insert({
           location_id: formData.locationId,
           name: formData.name,
-          icon: "❄", // A generic icon representing temperature
+          icon: formData.icon || "📋",
           sop_config: sopConfig,
         });
 
@@ -121,15 +154,57 @@ export default function StationsPage() {
       setFormData({ 
         locationId: locations.length === 1 ? locations[0].id : "", 
         name: "", 
-        minTemp: "", 
-        maxTemp: "" 
+        icon: "" 
       });
+      setFields([]);
       await fetchData();
     } catch (err: any) {
       alert(err.message || "Failed to add station");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const updateField = (index: number, updates: Partial<typeof fields[0]>) => {
+    const newFields = [...fields];
+    const prevType = newFields[index].type;
+    newFields[index] = { ...newFields[index], ...updates };
+    
+    if (updates.type && updates.type !== prevType) {
+      const t = updates.type;
+      if (t === 'temperature') {
+        newFields[index].unit = "°C";
+        newFields[index].warn_msg = "Temperature is out of the safe range. Ensure immediate corrective action.";
+      } else if (t === 'number') {
+        newFields[index].unit = "";
+        newFields[index].warn_msg = "Value out of acceptable bounds. Corrective action required.";
+      } else if (t === 'boolean') {
+        newFields[index].warn_msg = "Check indicates a problem requires attention.";
+      }
+    }
+    setFields(newFields);
+  };
+
+  const removeField = (index: number) => {
+    if (fields.length <= 1) return;
+    const newFields = [...fields];
+    newFields.splice(index, 1);
+    setFields(newFields);
+  };
+
+  const addField = () => {
+    setFields([
+      ...fields,
+      {
+        localId: Math.random().toString(36).substring(7),
+        label: "",
+        type: "temperature",
+        unit: "°C",
+        min: "",
+        max: "",
+        warn_msg: "Temperature is out of the safe range. Ensure immediate corrective action.",
+      }
+    ]);
   };
 
   if (loading && stations.length === 0) {
@@ -160,7 +235,20 @@ export default function StationsPage() {
         </div>
         {!isAdding && locations.length > 0 && (
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={() => {
+              setIsAdding(true);
+              setFields([
+                {
+                  localId: Math.random().toString(36).substring(7),
+                  label: "",
+                  type: "temperature",
+                  unit: "°C",
+                  min: "",
+                  max: "",
+                  warn_msg: "Temperature is out of the safe range. Ensure immediate corrective action.",
+                }
+              ]);
+            }}
             className="h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center shadow-sm w-fit"
           >
             <Plus size={16} className="mr-2" /> Add Station
@@ -174,62 +262,193 @@ export default function StationsPage() {
             <h2 className="text-[16px] font-bold text-[#0d1c2d]">New Station Config</h2>
             <button onClick={() => setIsAdding(false)} className="text-[13px] text-[#45464d] hover:text-[#0d1c2d] font-medium">Cancel</button>
           </div>
-          <form onSubmit={handleAddSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
-            <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Location</label>
-              <select
-                required
-                value={formData.locationId}
-                onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] bg-[#f8f9ff] outline-none focus:border-black/30 transition-colors"
-              >
-                <option value="" disabled>Select Locale</option>
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
-              </select>
+          <form onSubmit={handleAddSubmit} className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end pb-6 border-b border-black/10">
+              <div>
+                <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Location</label>
+                <select
+                  required
+                  value={formData.locationId}
+                  onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
+                  className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] bg-[#f8f9ff] outline-none focus:border-black/30 transition-colors"
+                >
+                  <option value="" disabled>Select Locale</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Station Name</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Walk-in Fridge"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
+                />
+              </div>
+              <div className="sm:col-span-2 md:col-span-1 relative">
+                <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">
+                  Icon <span className="normal-case font-normal text-[#94a3b8]">(optional)</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Pick or paste an emoji..."
+                    value={formData.icon}
+                    onFocus={() => setIconPickerOpen(true)}
+                    onBlur={() => setIconPickerOpen(false)}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[20px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[14px] placeholder:text-[#ccc]"
+                  />
+                  {iconPickerOpen && (
+                    <div className="absolute top-[46px] left-0 z-50 bg-white border border-black/10 rounded-xl shadow-lg p-3 w-full">
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {ICON_PRESETS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setFormData({ ...formData, icon: emoji });
+                              setIconPickerOpen(false);
+                            }}
+                            className={`w-[34px] h-[34px] rounded-lg text-[18px] flex items-center justify-center transition-colors border ${
+                              formData.icon === emoji
+                                ? "bg-[#0F172A] border-[#0F172A]"
+                                : "bg-white border-black/10 hover:bg-[#f8f9ff] hover:border-black/20"
+                            }`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); setIconPickerOpen(false); }}
+                        className="text-[11px] text-[#94a3b8] hover:text-[#0d1c2d] w-full text-right"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Station Name</label>
-              <input
-                required
-                type="text"
-                placeholder="Walk-in Fridge"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
-              />
+
+            <div className="flex flex-col gap-4">
+               <h3 className="text-[14px] font-bold text-[#0d1c2d]">Fields</h3>
+               {fields.map((f, i) => (
+                  <div key={f.localId} className="bg-[#f8f9ff] border border-black/5 rounded-xl p-4 flex flex-col gap-4 relative">
+                     {fields.length > 1 && (
+                        <button
+                           type="button"
+                           onClick={() => removeField(i)}
+                           className="absolute top-4 right-4 text-[#94a3b8] hover:text-[#ba1a1a] transition-colors"
+                        >
+                           <X size={18} />
+                        </button>
+                     )}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-8">
+                        <div>
+                           <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Label</label>
+                           <input
+                              required
+                              type="text"
+                              placeholder="e.g. Temperature reading"
+                              value={f.label}
+                              onChange={(e) => updateField(i, { label: e.target.value })}
+                              className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                           />
+                        </div>
+                        <div>
+                           <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Type</label>
+                           <select
+                              value={f.type}
+                              onChange={(e) => updateField(i, { type: e.target.value as FieldType })}
+                              className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] bg-white outline-none focus:border-black/30 transition-colors"
+                           >
+                              <option value="temperature">Temperature (°C)</option>
+                              <option value="number">Number / PPM</option>
+                              <option value="boolean">Yes / No check</option>
+                              <option value="date">Date (e.g. expiry)</option>
+                              <option value="text">Free text / notes</option>
+                           </select>
+                        </div>
+                     </div>
+
+                     {(f.type === 'temperature' || f.type === 'number') && (
+                        <div className="grid grid-cols-3 gap-4 mr-8">
+                           <div>
+                              <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Unit</label>
+                              <input
+                                 type="text"
+                                 placeholder="e.g. PPM, °C"
+                                 value={f.unit}
+                                 onChange={(e) => updateField(i, { unit: e.target.value })}
+                                 className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                              />
+                           </div>
+                           <div>
+                              <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Min</label>
+                              <input
+                                 type="number"
+                                 step="any"
+                                 placeholder="No min"
+                                 value={f.min}
+                                 onChange={(e) => updateField(i, { min: e.target.value })}
+                                 className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                              />
+                           </div>
+                           <div>
+                              <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Max</label>
+                              <input
+                                 type="number"
+                                 step="any"
+                                 placeholder="No max"
+                                 value={f.max}
+                                 onChange={(e) => updateField(i, { max: e.target.value })}
+                                 className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                              />
+                           </div>
+                        </div>
+                     )}
+
+                     {(f.type === 'temperature' || f.type === 'number' || f.type === 'boolean') && (
+                        <div className="mr-8">
+                           <label className="block text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Warn message</label>
+                           <input
+                              type="text"
+                              required
+                              placeholder="e.g. Value out of safe range — corrective action required."
+                              value={f.warn_msg}
+                              onChange={(e) => updateField(i, { warn_msg: e.target.value })}
+                              className="w-full h-[38px] border border-black/10 rounded-lg px-3 text-[13px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc] bg-white"
+                           />
+                        </div>
+                     )}
+                  </div>
+               ))}
+
+               <button
+                  type="button"
+                  onClick={addField}
+                  className="h-[38px] bg-white border border-black/10 text-[#0d1c2d] px-4 rounded-xl text-[13px] font-medium hover:bg-[#f8f9ff] transition-colors flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.02)] justify-center w-full sm:w-fit mt-2"
+               >
+                  <Plus size={14} className="mr-2" /> Add Field
+               </button>
             </div>
-            <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Min Temp (°C)</label>
-              <input
-                type="number"
-                step="0.1"
-                placeholder="No min"
-                value={formData.minTemp}
-                onChange={(e) => setFormData({ ...formData, minTemp: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
-              />
-            </div>
-            <div className="md:col-span-1">
-              <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Max Temp (°C)</label>
-              <input
-                type="number"
-                step="0.1"
-                placeholder="4.0"
-                value={formData.maxTemp}
-                onChange={(e) => setFormData({ ...formData, maxTemp: e.target.value })}
-                className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
-              />
-            </div>
-            <div className="md:col-span-1">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full h-[42px] bg-[#0F172A] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center justify-center disabled:opacity-50"
-              >
-                {submitting ? <Loader2 size={16} className="animate-spin" /> : "Save"}
-              </button>
+
+            <div className="pt-4 mt-2 border-t border-black/10 flex justify-end">
+               <button
+                  type="submit"
+                  disabled={submitting}
+                  className="h-[42px] px-8 bg-[#0F172A] text-white rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center justify-center disabled:opacity-50 w-full sm:w-auto"
+               >
+                  {submitting ? <Loader2 size={16} className="animate-spin" /> : "Save Station"}
+               </button>
             </div>
           </form>
         </div>
@@ -252,35 +471,32 @@ export default function StationsPage() {
               </tr>
             </thead>
             <tbody className="text-[14px]">
-              {stations.map((stat) => {
-                const config = stat.sop_config && stat.sop_config.length > 0 ? stat.sop_config[0] : null;
-                const min = config?.min !== null && config?.min !== undefined ? config.min : "—";
-                const max = config?.max !== null && config?.max !== undefined ? config.max : "—";
-
-                return (
-                  <tr key={stat.id} className="border-b border-black/5 last:border-0 hover:bg-[#eef4ff] transition-colors">
-                    <td className="px-6 py-4 text-[#0d1c2d] font-medium flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#E6F1FB] text-[#245D91] flex items-center justify-center text-[16px]">
-                        {stat.icon}
-                      </div>
-                      {stat.name}
-                    </td>
-                    <td className="px-6 py-4 text-[#45464d]">
-                      {stat.location?.name}
-                    </td>
-                    <td className="px-6 py-4 text-[#45464d]">
-                      {config ? (
-                         <div className="flex items-center gap-2">
-                            <span className="text-[12px] bg-[#f5f4f0] px-2 py-0.5 rounded font-mono">Min: {min}</span>
-                            <span className="text-[12px] bg-[#f5f4f0] px-2 py-0.5 rounded font-mono">Max: {max}</span>
-                         </div>
-                      ) : (
-                        "No threshold set"
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {stations.map((stat) => (
+                <tr key={stat.id} className="border-b border-black/5 last:border-0 hover:bg-[#eef4ff] transition-colors">
+                  <td className="px-6 py-4 text-[#0d1c2d] font-medium flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#E6F1FB] text-[#245D91] flex items-center justify-center text-[16px]">
+                      {stat.icon || "📋"}
+                    </div>
+                    {stat.name}
+                  </td>
+                  <td className="px-6 py-4 text-[#45464d]">
+                    {stat.location?.name}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-2">
+                       {stat.sop_config && stat.sop_config.length > 0 ? (
+                          stat.sop_config.map((f: any) => (
+                             <span key={f.key} className="text-[12px] bg-[#f5f4f0] text-[#45464d] px-2.5 py-1 rounded-md font-medium border border-black/5 whitespace-nowrap">
+                                {f.label} &middot; {f.type}
+                             </span>
+                          ))
+                       ) : (
+                          <span className="text-[13px] text-[#94a3b8]">No fields configured</span>
+                       )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

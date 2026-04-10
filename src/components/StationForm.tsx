@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 export type FieldConfig = {
   key: string;
   label: string;
-  type: 'temperature' | 'passfail';
+  type: 'temperature' | 'number' | 'boolean' | 'date' | 'text' | 'passfail';
   min?: number;
   max?: number;
   unit?: string;
@@ -48,19 +48,38 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
   const [loading, setLoading] = useState(false);
   const [dbError, setDbError] = useState("");
 
-  const validateTemp = (val: string, f: FieldConfig): 'SAFE' | 'UNSAFE' | null => {
-    if (val === "") return null;
-    const num = parseFloat(val);
-    if (isNaN(num)) return null;
+  const validateField = (val: string, f: FieldConfig): 'SAFE' | 'UNSAFE' | null => {
+    if (val === "" && f.type !== 'boolean') return null;
+    
+    if (f.type === 'temperature' || f.type === 'number') {
+      const num = parseFloat(val);
+      if (isNaN(num)) return null;
+      if (f.min !== undefined && num < f.min) return 'UNSAFE';
+      if (f.max !== undefined && num > f.max) return 'UNSAFE';
+      return 'SAFE';
+    }
+    
+    if (f.type === 'date') {
+      const localToday = new Date();
+      const year = localToday.getFullYear();
+      const month = String(localToday.getMonth() + 1).padStart(2, '0');
+      const day = String(localToday.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+      
+      if (val <= todayStr) return 'UNSAFE';
+      return 'SAFE';
+    }
 
-    if (f.min !== undefined && num < f.min) return 'UNSAFE';
-    if (f.max !== undefined && num > f.max) return 'UNSAFE';
-    return 'SAFE';
+    if (f.type === 'text') {
+      return 'SAFE';
+    }
+
+    return null;
   };
 
   const handleInputChange = (fieldKey: string, val: string) => {
     const f = station.fields.find((x) => x.key === fieldKey)!;
-    const status = validateTemp(val, f);
+    const status = validateField(val, f);
     setFormData((prev) => ({
       ...prev,
       [fieldKey]: {
@@ -71,12 +90,12 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
     }));
   };
 
-  const handlePassChange = (fieldKey: string, passed: boolean) => {
+  const handleBoolChange = (fieldKey: string, isSafe: boolean, valSafe: string, valUnsafe: string) => {
     setFormData((prev) => ({
       ...prev,
       [fieldKey]: {
-        value: passed ? 'pass' : 'fail',
-        status: passed ? 'SAFE' : 'UNSAFE',
+        value: isSafe ? valSafe : valUnsafe,
+        status: isSafe ? 'SAFE' : 'UNSAFE',
         correctiveAction: prev[fieldKey]?.correctiveAction || "",
       },
     }));
@@ -86,24 +105,30 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
     setFormData((prev) => ({
       ...prev,
       [fieldKey]: {
-        ...prev[fieldKey],
+        ...prev[fieldKey]!,
         correctiveAction: val,
       },
     }));
   };
 
   const getIsDisabled = () => {
-    let hasData = false;
+    let hasAllData = true;
+
     for (const f of station.fields) {
       const fd = formData[f.key];
-      if (fd && fd.value !== "" && fd.value !== null) {
-        hasData = true;
-        if (fd.status === 'UNSAFE' && !fd.correctiveAction.trim()) {
-          return true;
-        }
+      
+      const hasData = fd && fd.value !== "" && fd.value !== null;
+      if (!hasData) {
+        hasAllData = false;
+        break;
+      }
+      
+      if (fd.status === 'UNSAFE' && !fd.correctiveAction.trim()) {
+        return true;
       }
     }
-    return !hasData;
+
+    return !hasAllData || station.fields.length === 0;
   };
 
   const handleSubmit = async () => {
@@ -202,29 +227,57 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
           const ds = formData[f.key] || { value: "", status: null, correctiveAction: "" };
           const isWarn = ds.status === 'UNSAFE';
 
+          const displayWarnMsg = f.type === 'date' 
+            ? "This item has expired or expires today. Replace before use."
+            : f.warn_msg;
+
           return (
             <div key={f.key} className="flex flex-col">
-              {f.type === "passfail" ? (
+              {f.type === "passfail" && (
                 <>
                   <span className="block text-[14px] font-medium text-[#0d1c2d] mb-2">
                     {f.label}
                   </span>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => handlePassChange(f.key, true)}
+                      onClick={() => handleBoolChange(f.key, true, 'pass', 'fail')}
                       className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === 'pass' ? 'bg-[#22C55E]/10 border-[#22C55E] text-[#006e2f]' : 'bg-white border-black/10 text-[#0d1c2d] hover:border-black/20 hover:bg-[#eef4ff]'}`}
                     >
                       Pass
                     </button>
                     <button
-                      onClick={() => handlePassChange(f.key, false)}
+                      onClick={() => handleBoolChange(f.key, false, 'pass', 'fail')}
                       className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === 'fail' ? 'bg-[#ffdad6] border-[#ba1a1a]/20 text-[#ba1a1a]' : 'bg-white border-black/10 text-[#0d1c2d] hover:border-black/20 hover:bg-[#eef4ff]'}`}
                     >
                       Fail
                     </button>
                   </div>
                 </>
-              ) : (
+              )}
+
+              {f.type === "boolean" && (
+                <>
+                  <span className="block text-[14px] font-medium text-[#0d1c2d] mb-2">
+                    {f.label}
+                  </span>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleBoolChange(f.key, true, 'yes', 'no')}
+                      className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === 'yes' ? 'bg-[#22C55E]/10 border-[#22C55E] text-[#006e2f]' : 'bg-white border-black/10 text-[#0d1c2d] hover:border-black/20 hover:bg-[#eef4ff]'}`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => handleBoolChange(f.key, false, 'yes', 'no')}
+                      className={`flex-1 h-[42px] border rounded-lg text-[14px] font-medium transition-colors shadow-sm ${ds.value === 'no' ? 'bg-[#ffdad6] border-[#ba1a1a]/20 text-[#ba1a1a]' : 'bg-white border-black/10 text-[#0d1c2d] hover:border-black/20 hover:bg-[#eef4ff]'}`}
+                    >
+                      No
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {(f.type === "temperature" || f.type === "number") && (
                 <>
                   <span className="block text-[14px] font-medium text-[#0d1c2d] mb-2">
                     {f.label}
@@ -233,7 +286,7 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
                   <div className="relative">
                     <input
                       type="number"
-                      step="0.1"
+                      step="any"
                       placeholder="—"
                       value={(ds.value as string) || ""}
                       onChange={(e) => handleInputChange(f.key, e.target.value)}
@@ -248,13 +301,41 @@ export function StationForm({ station, staffId, orgSlug, locSlug, instanceId, se
                 </>
               )}
 
+              {f.type === "date" && (
+                <>
+                  <span className="block text-[14px] font-medium text-[#0d1c2d] mb-2">
+                    {f.label}
+                  </span>
+                  <input
+                    type="date"
+                    value={(ds.value as string) || ""}
+                    onChange={(e) => handleInputChange(f.key, e.target.value)}
+                    className={`w-full h-[46px] border rounded-lg px-4 text-[15px] text-[#0d1c2d] outline-none transition-colors shadow-sm placeholder:text-[#ccc] ${isWarn ? 'border-[#ba1a1a] bg-[#fff8f8] focus:border-[#ba1a1a]' : 'bg-white border-black/10 focus:border-black/30'}`}
+                  />
+                </>
+              )}
+
+              {f.type === "text" && (
+                <>
+                  <span className="block text-[14px] font-medium text-[#0d1c2d] mb-2">
+                    {f.label}
+                  </span>
+                  <textarea
+                    placeholder="Enter notes..."
+                    value={(ds.value as string) || ""}
+                    onChange={(e) => handleInputChange(f.key, e.target.value)}
+                    className="w-full border border-black/10 rounded-lg px-4 py-3 text-[15px] text-[#0d1c2d] outline-none transition-colors shadow-sm placeholder:text-[#ccc] bg-white focus:border-black/30 min-h-[80px] resize-none"
+                  />
+                </>
+              )}
+
               {/* Safety Alert Box */}
               {isWarn && (
                 <div className="flex gap-3 bg-[#ffdad6] border border-[#ba1a1a]/20 rounded-xl p-3 mt-3 animate-in fade-in duration-200 shadow-sm">
                   <AlertCircle size={16} className="text-[#ba1a1a] mt-[2px] shrink-0" />
                   <div className="flex-1">
                     <div className="text-[13px] font-medium text-[#ba1a1a] mb-1">Safety alert</div>
-                    <div className="text-[12px] text-[#ba1a1a] leading-[1.5] mb-3">{f.warn_msg}</div>
+                    <div className="text-[12px] text-[#ba1a1a] leading-[1.5] mb-3">{displayWarnMsg}</div>
 
                     <div className="text-[11px] font-semibold text-[#ba1a1a] opacity-80 mb-1.5 tracking-[0.05em] uppercase">Action Required: Describe corrective steps (e.g., 'Moved stock').</div>
                     <textarea

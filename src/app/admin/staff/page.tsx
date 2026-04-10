@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Plus, Users, UserPlus } from "lucide-react";
+import { Loader2, Plus, Users, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function StaffManagement() {
   const [loading, setLoading] = useState(true);
@@ -21,6 +21,11 @@ export default function StaffManagement() {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+
+  // Activation State
+  const [showInactive, setShowInactive] = useState(false);
+  const [confirmDeactivateId, setConfirmDeactivateId] = useState<string | null>(null);
+  const [deactivateError, setDeactivateError] = useState<{ id: string, message: string } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -132,6 +137,50 @@ export default function StaffManagement() {
     return <div className="p-8 text-[#ba1a1a]">Error: {error}</div>;
   }
 
+  const activeStaff = staff.filter(s => s.is_active ?? true);
+  const inactiveStaff = staff.filter(s => !(s.is_active ?? true));
+
+  const handleDeactivate = async (staffId: string) => {
+    const adminCount = activeStaff.filter(s => s.role.toLowerCase() === 'admin').length;
+    const isThisAdmin = activeStaff.find(s => s.id === staffId)?.role.toLowerCase() === 'admin';
+    
+    if (isThisAdmin && adminCount <= 1) {
+      setDeactivateError({ id: staffId, message: "Cannot deactivate the only admin account." });
+      return;
+    }
+
+    try {
+      const { error: updateErr } = await supabase
+        .from('staff')
+        .update({ is_active: false })
+        .eq('id', staffId);
+
+      if (updateErr) throw updateErr;
+
+      setStaff(prev => prev.map(s => s.id === staffId ? { ...s, is_active: false } : s));
+      setConfirmDeactivateId(null);
+      setDeactivateError(null);
+    } catch (err: any) {
+      setDeactivateError({ id: staffId, message: err.message || "Failed to deactivate." });
+    }
+  };
+
+  const handleReactivate = async (staffId: string) => {
+    try {
+      const { error: updateErr } = await supabase
+        .from('staff')
+        .update({ is_active: true })
+        .eq('id', staffId);
+
+      if (updateErr) throw updateErr;
+
+      setStaff(prev => prev.map(s => s.id === staffId ? { ...s, is_active: true } : s));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to reactivate");
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 sm:p-10 text-[#0d1c2d] animate-in fade-in duration-500">
       <div className="mb-10">
@@ -151,33 +200,107 @@ export default function StaffManagement() {
                   <th className="p-4 font-medium min-w-[200px]">Full Name</th>
                   <th className="p-4 font-medium min-w-[150px]">Role</th>
                   <th className="p-4 font-medium min-w-[150px]">Location</th>
-                  <th className="p-4 font-medium w-[100px] text-center">Status</th>
+                  <th className="p-4 font-medium w-[100px] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/10">
-                {staff.map((member) => (
+                {activeStaff.map((member) => (
                   <tr key={member.id} className="hover:bg-[#eef4ff] transition-colors">
-                    <td className="p-4 font-medium">{member.full_name}</td>
-                    <td className="p-4 text-[#45464d]">{member.role}</td>
-                    <td className="p-4 text-[#45464d]">{member.locations?.name}</td>
-                    <td className="p-4 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[12px] font-medium bg-[#22C55E]/10 text-[#006e2f] border border-[#22C55E]">
-                        Active
-                      </span>
-                    </td>
+                    {confirmDeactivateId === member.id ? (
+                      <td colSpan={4} className="p-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <span className="text-[13px] text-[#45464d]">
+                            Deactivate <span className="font-bold text-[#0d1c2d]">{member.full_name}</span>? They will no longer be able to log in.
+                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => {
+                                setConfirmDeactivateId(null);
+                                setDeactivateError(null);
+                              }}
+                              className="text-[13px] font-medium text-[#45464d] hover:text-[#0d1c2d] px-3 py-1.5 rounded border border-black/10 hover:bg-black/5 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleDeactivate(member.id)}
+                              className="text-[13px] font-medium text-white bg-[#ba1a1a] hover:bg-[#93000a] px-4 py-1.5 rounded shadow-sm transition-colors"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                        </div>
+                        {deactivateError?.id === member.id && (
+                          <div className="mt-2 text-[13px] text-[#ba1a1a] font-medium text-right">{deactivateError.message}</div>
+                        )}
+                      </td>
+                    ) : (
+                      <>
+                        <td className="p-4 font-medium">{member.full_name}</td>
+                        <td className="p-4 text-[#45464d]">{member.role}</td>
+                        <td className="p-4 text-[#45464d]">{member.locations?.name}</td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => setConfirmDeactivateId(member.id)}
+                            className="text-[13px] font-medium text-[#ba1a1a] hover:text-[#93000a] transition-colors border border-transparent hover:border-[#ba1a1a]/20 px-2 py-1 rounded"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 
-                {staff.length === 0 && (
+                {activeStaff.length === 0 && (
                   <tr>
                     <td colSpan={4} className="p-8 text-center text-[#45464d]">
-                      No staff members found. Add one to get started.
+                      No active staff members found.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          
+          {/* Inactive Staff Section */}
+          {inactiveStaff.length > 0 && (
+            <div className="border-t border-black/10">
+              <button 
+                onClick={() => setShowInactive(!showInactive)}
+                className="flex items-center justify-between w-full p-4 text-[#45464d] hover:bg-black/5 transition-colors focus:outline-none"
+              >
+                <div className="text-[14px] font-medium">
+                  Inactive Staff ({inactiveStaff.length})
+                </div>
+                {showInactive ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </button>
+              
+              {showInactive && (
+                <div className="overflow-x-auto border-t border-black/5">
+                  <table className="w-full text-left text-[14px]">
+                    <tbody className="divide-y divide-black/5">
+                      {inactiveStaff.map(member => (
+                        <tr key={member.id} className="bg-[#fcfcfc] text-[#737373]">
+                          <td className="p-4 font-medium w-[200px]">{member.full_name}</td>
+                          <td className="p-4 w-[150px]">{member.role}</td>
+                          <td className="p-4 w-[150px]">{member.locations?.name}</td>
+                          <td className="p-4 text-right w-[100px]">
+                            <button
+                              onClick={() => handleReactivate(member.id)}
+                              className="text-[12px] font-medium text-[#006e2f] border border-[#22C55E] hover:bg-[#22C55E]/10 transition-colors px-3 py-1.5 rounded shadow-sm whitespace-nowrap"
+                            >
+                              Reactivate
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Quick Add Form */}
