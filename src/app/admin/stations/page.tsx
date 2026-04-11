@@ -481,7 +481,7 @@ export default function StationsPage() {
                   <td className="px-6 py-4 text-[#45464d]">
                     {stat.location?.name}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 hidden md:table-cell">
                     <div className="flex flex-wrap gap-2">
                       {stat.sop_config && stat.sop_config.length > 0 ? (
                         stat.sop_config.map((f: any) => (
