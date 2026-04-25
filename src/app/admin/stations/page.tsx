@@ -35,6 +35,128 @@ export default function StationsPage() {
   const ICON_PRESETS = [
     "🌡️", "❄️", "🧊", "🔥", "🍳", "🥩", "🥗", "🥛", "🧴", "🧽",
     "🚿", "🪣", "🧹", "📋", "✅", "⚠️", "🔬", "💧", "🏪", "🍽️",
+    "🐀", "🪲",
+  ];
+
+  const STATION_TEMPLATES: { label: string; name: string; icon: string; fields: typeof fields }[] = [
+    {
+      label: "❄️ Cold Storage Log",
+      name: "Cold Storage Log",
+      icon: "❄️",
+      fields: [
+        { localId: "cs_0", label: "Storage temperature (°C)", type: "temperature", unit: "°C", min: "0", max: "4", warn_msg: "Temperature exceeds 4°C. Move product to compliant storage immediately and notify manager." },
+        { localId: "cs_1", label: "Door seals and gaskets intact?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Seal damage found. Tag unit, notify manager, and arrange repair before next service." },
+        { localId: "cs_2", label: "No evidence of ice buildup or condensation?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Ice buildup detected. Schedule defrost and inspect for door seal failure." },
+        { localId: "cs_3", label: "All products covered, labelled, and off floor?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Storage standards not met. Cover, label, and properly store all product before end of shift." },
+        { localId: "cs_4", label: "Raw proteins stored below ready-to-eat foods?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Cross-contamination risk. Reorganize storage: raw below cooked/ready-to-eat. Document corrective action." },
+        { localId: "cs_5", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🔥 Hot Holding Log",
+      name: "Hot Holding Log",
+      icon: "🔥",
+      fields: [
+        { localId: "hh_0", label: "Hot holding temperature (°C)", type: "temperature", unit: "°C", min: "60", max: "100", warn_msg: "Temperature below 60°C. Reheat product to 74°C internal temp or discard. Do not serve." },
+        { localId: "hh_1", label: "Product covered when not in active service?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Products must be covered when not in active service. Cover immediately to prevent contamination." },
+        { localId: "hh_2", label: "Time product placed in hot holding", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+        { localId: "hh_3", label: "Product discarded after 2 hours if below 60°C?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Ensure product held below 60°C for more than 2 hours is discarded and logged." },
+        { localId: "hh_4", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "📦 Dry Storage Log",
+      name: "Dry Storage Log",
+      icon: "📦",
+      fields: [
+        { localId: "ds_0", label: "Storage area temperature (°C)", type: "temperature", unit: "°C", min: "10", max: "21", warn_msg: "Dry storage temperature out of range. Check ventilation and remove heat sources." },
+        { localId: "ds_1", label: "All products at least 15cm off the floor?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Products must be stored off the floor. Raise all items to shelving immediately." },
+        { localId: "ds_2", label: "All open products in sealed food-grade containers?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Open products must be sealed. Transfer to food-grade containers and label with date." },
+        { localId: "ds_3", label: "No expired or damaged product on shelves?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Expired or damaged product found. Remove, discard, and document what was discarded." },
+        { localId: "ds_4", label: "No evidence of moisture, pests, or contamination?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Contamination risk detected. Remove affected product, identify source, and notify manager." },
+        { localId: "ds_5", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🧴 Sanitizer Station Log",
+      name: "Sanitizer Station Log",
+      icon: "🧴",
+      fields: [
+        { localId: "ss_0", label: "Sanitizer concentration (PPM)", type: "number", unit: "PPM", min: "200", max: "400", warn_msg: "PPM out of range (200–400 PPM required). Change solution immediately and retest before use." },
+        { localId: "ss_1", label: "Test strip expiry date", type: "date", unit: "", min: "", max: "", warn_msg: "" },
+        { localId: "ss_2", label: "Solution changed this shift?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Sanitizer solution must be changed each shift. Replace immediately and log new concentration." },
+        { localId: "ss_3", label: "Bucket clean with no food debris?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Bucket contaminated. Empty, wash, rinse, and refill with fresh sanitizer solution." },
+        { localId: "ss_4", label: "Cloths fully submerged in solution?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Cloths must remain submerged to maintain sanitizer contact. Submerge and retest solution strength." },
+        { localId: "ss_5", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🍽️ Dishwasher Log",
+      name: "Dishwasher Log",
+      icon: "🍽️",
+      fields: [
+        { localId: "dw_0", label: "Wash cycle temperature (°C)", type: "temperature", unit: "°C", min: "60", max: "100", warn_msg: "Wash temp below 60°C. Do not use dishwasher. Wash manually until repaired and retest." },
+        { localId: "dw_1", label: "Final rinse temperature (°C)", type: "temperature", unit: "°C", min: "82", max: "100", warn_msg: "Rinse temp below 82°C. Sanitization is not achieved. Remove dishwasher from service immediately." },
+        { localId: "dw_2", label: "Wash arms and filters clean and unobstructed?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Blocked wash arms reduce cleaning effectiveness. Clean filters and arms before running next cycle." },
+        { localId: "dw_3", label: "Detergent and rinse aid levels adequate?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Refill detergent or rinse aid before next cycle. Do not operate without correct chemical levels." },
+        { localId: "dw_4", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🐀 Pest Control Log",
+      name: "Pest Control Log",
+      icon: "🐀",
+      fields: [
+        { localId: "pc_0", label: "Pest control log book up to date?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Log book must be current. Update records and notify manager immediately." },
+        { localId: "pc_1", label: "Evidence of pests observed?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Pest activity detected. Isolate affected area, contact pest control contractor, and notify manager." },
+        { localId: "pc_2", label: "Traps and bait stations checked?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Traps not checked. Complete inspection of all bait stations before end of shift." },
+        { localId: "pc_3", label: "Physical barriers intact? (screens, kick plates, seals)", type: "boolean", unit: "", min: "", max: "", warn_msg: "Barrier damage found. Document location, apply temporary seal if possible, and schedule repair." },
+        { localId: "pc_4", label: "Pest control contractor visit this period?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Contractor visit overdue. Contact pest control company to schedule service." },
+        { localId: "pc_5", label: "Additional observations / notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🍺 Draft Beer System Log",
+      name: "Draft Beer System Log",
+      icon: "🍺",
+      fields: [
+        { localId: "db_0", label: "Beer line temperature (°C)", type: "temperature", unit: "°C", min: "2", max: "4", warn_msg: "Line temperature out of range (2–4°C required). Adjust cooler and recheck before service. Notify manager." },
+        { localId: "db_1", label: "Lines cleaned within last 14 days?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Line cleaning overdue. Schedule cleaning before next service. Document date completed." },
+        { localId: "db_2", label: "Last line clean date", type: "date", unit: "", min: "", max: "", warn_msg: "" },
+        { localId: "db_3", label: "Tap heads and couplers clean and free of buildup?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Buildup on tap heads or couplers detected. Clean and sanitize immediately before service." },
+        { localId: "db_4", label: "Drip trays cleaned and sanitized?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Drip trays must be cleaned and sanitized each shift. Complete before service begins." },
+        { localId: "db_5", label: "Keg connections secure with no leaks?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Leak detected. Shut off affected keg line, notify manager, and do not serve until repaired." },
+        { localId: "db_6", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🧊 Ice Bin Log",
+      name: "Ice Bin Log",
+      icon: "🧊",
+      fields: [
+        { localId: "ib_0", label: "Ice bin cleaned and sanitized today?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Ice bin must be cleaned and sanitized daily. Empty, clean, sanitize, and refill before service." },
+        { localId: "ib_1", label: "Scoop stored outside ice bin (not submerged)?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Scoop must never be stored in ice. Remove immediately and store in a clean designated holder." },
+        { localId: "ib_2", label: "No drink glasses used to scoop ice?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Glass scooping is prohibited — risk of glass contamination. Discard affected ice, replace bin, retrain staff." },
+        { localId: "ib_3", label: "No evidence of contamination in ice bin?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Contamination detected. Discard all ice, clean and sanitize bin, refill with fresh ice." },
+        { localId: "ib_4", label: "Ice scoop clean and in good condition?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Damaged or soiled scoop must be replaced immediately. Do not use until replaced." },
+        { localId: "ib_5", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
+    {
+      label: "🥃 Bar Station Log",
+      name: "Bar Station Log",
+      icon: "🥃",
+      fields: [
+        { localId: "bs_0", label: "Garnish tray temperature (°C)", type: "temperature", unit: "°C", min: "0", max: "4", warn_msg: "Garnish temperature exceeds 4°C. Discard affected garnishes, replace with fresh product from cold storage immediately." },
+        { localId: "bs_1", label: "Bar surface sanitizer concentration (PPM)", type: "number", unit: "PPM", min: "200", max: "400", warn_msg: "PPM out of range (200–400 PPM required). Replace solution and retest before continuing service." },
+        { localId: "bs_2", label: "Test strip expiry date", type: "date", unit: "", min: "", max: "", warn_msg: "" },
+        { localId: "bs_3", label: "Glass washer wash temperature (°C)", type: "temperature", unit: "°C", min: "60", max: "100", warn_msg: "Wash temp below 60°C. Take glass washer out of service. Hand wash and sanitize until repaired." },
+        { localId: "bs_4", label: "Glass washer rinse temperature (°C)", type: "temperature", unit: "°C", min: "82", max: "100", warn_msg: "Rinse temp below 82°C. Sanitization not achieved. Remove from service immediately and notify manager." },
+        { localId: "bs_5", label: "Clean glasses stored inverted on clean surface?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Glasses must be stored inverted to prevent contamination. Correct storage immediately." },
+        { localId: "bs_6", label: "Garnishes covered when not in active service?", type: "boolean", unit: "", min: "", max: "", warn_msg: "Garnishes must be covered when not in use. Cover or return to cold storage immediately." },
+        { localId: "bs_7", label: "Notes", type: "text", unit: "", min: "", max: "", warn_msg: "" },
+      ],
+    },
   ];
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
@@ -234,25 +356,38 @@ export default function StationsPage() {
           <p className="text-[#45464d] text-[15px]">Configure operating thresholds for temperature logging.</p>
         </div>
         {!isAdding && locations.length > 0 && (
-          <button
-            onClick={() => {
-              setIsAdding(true);
-              setFields([
-                {
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => {
+                setIsAdding(true);
+                setFields([{
                   localId: Math.random().toString(36).substring(7),
-                  label: "",
-                  type: "temperature",
-                  unit: "°C",
-                  min: "",
-                  max: "",
+                  label: "", type: "temperature", unit: "°C", min: "", max: "",
                   warn_msg: "Temperature is out of the safe range. Ensure immediate corrective action.",
-                }
-              ]);
-            }}
-            className="h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center shadow-sm w-fit"
-          >
-            <Plus size={16} className="mr-2" /> Add Station
-          </button>
+                }]);
+              }}
+              className="h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center shadow-sm w-fit"
+            >
+              <Plus size={16} className="mr-2" /> Add Station
+            </button>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const tpl = STATION_TEMPLATES.find(t => t.name === e.target.value);
+                if (!tpl) return;
+                setIsAdding(true);
+                setFormData(prev => ({ ...prev, name: tpl.name, icon: tpl.icon }));
+                setFields(tpl.fields.map(f => ({ ...f, localId: Math.random().toString(36).substring(7) })));
+                e.target.value = "";
+              }}
+              className="h-[42px] bg-white border border-black/10 text-[#0d1c2d] px-4 rounded-xl text-[14px] font-medium hover:bg-[#f8f9ff] transition-colors shadow-sm cursor-pointer outline-none"
+            >
+              <option value="" disabled>Use Template…</option>
+              {STATION_TEMPLATES.map(t => (
+                <option key={t.name} value={t.name}>{t.label}</option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 

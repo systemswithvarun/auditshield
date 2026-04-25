@@ -30,8 +30,8 @@ export default function ScheduleManager() {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newStationId, setNewStationId] = useState("");
-  const [newStart, setNewStart] = useState("08:00");
-  const [newEnd, setNewEnd] = useState("12:00");
+  const [newStart, setNewStart] = useState("03:00");
+  const [newEnd, setNewEnd] = useState("04:00");
   const [newGrace, setNewGrace] = useState("15");
   const [isSaving, setIsSaving] = useState(false);
 

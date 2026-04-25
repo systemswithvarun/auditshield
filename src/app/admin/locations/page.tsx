@@ -10,6 +10,7 @@ type Location = {
   address: string | null;
   created_at: string;
   slug: string;
+  timezone: string;
 };
 
 type Org = {
@@ -35,8 +36,9 @@ export default function LocationsPage() {
   const [error, setError] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ name: "", address: "" });
-  
+  const [formData, setFormData] = useState({ name: "", address: "", timezone: "America/Edmonton" });
+  const [userRole, setUserRole] = useState<"owner" | "manager">("manager");
+
   const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -55,18 +57,15 @@ export default function LocationsPage() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) throw new Error("Not authenticated");
 
-      const { data: orgData } = await supabase
-        .from("organizations")
-        .select("id, name, slug")
-        .eq("owner_id", userData.user.id)
-        .maybeSingle();
+      const { data: orgData } = await supabase.rpc("get_my_organization");
+      if (!orgData?.exists) throw new Error("Organization not found.");
 
-      if (!orgData) throw new Error("Organization not found.");
-      setOrg(orgData);
+      setOrg({ id: orgData.id, name: orgData.name, slug: orgData.slug });
+      setUserRole(orgData.role || "manager");
 
       const { data: locData, error: locErr } = await supabase
         .from("locations")
-        .select("id, name, address, created_at, slug")
+        .select("id, name, address, created_at, slug, timezone")
         .eq("organization_id", orgData.id)
         .order("created_at", { ascending: true });
 
@@ -96,12 +95,13 @@ export default function LocationsPage() {
           name: formData.name.trim(),
           address: formData.address.trim() || null,
           slug: slug,
+          timezone: formData.timezone,
         });
 
       if (insertError) throw insertError;
 
       setIsAdding(false);
-      setFormData({ name: "", address: "" });
+      setFormData({ name: "", address: "", timezone: "America/Edmonton" });
       await fetchData();
     } catch (err: any) {
       setError(err.message || "Failed to add location");
@@ -166,7 +166,7 @@ export default function LocationsPage() {
           <h1 className="text-[28px] font-medium tracking-tight mb-1 text-[#0d1c2d]">Locations</h1>
           <p className="text-[#45464d] text-[15px]">Manage physical sites for your organization.</p>
         </div>
-        {!isAdding && (
+        {!isAdding && userRole === "owner" && (
           <button
             onClick={() => setIsAdding(true)}
             className="h-[42px] bg-[#0F172A] text-white px-5 rounded-xl text-[14px] font-medium tracking-[-0.2px] hover:bg-black transition-colors flex items-center shadow-sm w-fit shrink-0"
@@ -190,7 +190,7 @@ export default function LocationsPage() {
             <button onClick={() => setIsAdding(false)} className="text-[13px] text-[#45464d] hover:text-[#0d1c2d] font-medium">Cancel</button>
           </div>
           <form onSubmit={handleAddSubmit} className="flex flex-col gap-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Location Name <span className="text-[#ba1a1a]">*</span></label>
                 <input
@@ -211,6 +211,32 @@ export default function LocationsPage() {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors placeholder:text-[#ccc]"
                 />
+              </div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">Timezone</label>
+                <select
+                  value={formData.timezone}
+                  onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                  className="w-full h-[42px] border border-black/10 rounded-xl px-3 text-[14px] text-[#0d1c2d] outline-none focus:border-black/30 transition-colors bg-white"
+                >
+                  <optgroup label="Canada">
+                    <option value="America/Vancouver">Pacific Time — Vancouver, BC</option>
+                    <option value="America/Edmonton">Mountain Time — Calgary, Edmonton, AB</option>
+                    <option value="America/Regina">Central Time (SK) — Regina, Saskatoon</option>
+                    <option value="America/Winnipeg">Central Time — Winnipeg, MB</option>
+                    <option value="America/Toronto">Eastern Time — Toronto, Ottawa, ON</option>
+                    <option value="America/Halifax">Atlantic Time — Halifax, NS</option>
+                    <option value="America/St_Johns">Newfoundland Time — St. John's, NL</option>
+                  </optgroup>
+                  <optgroup label="United States">
+                    <option value="America/Los_Angeles">Pacific Time — LA, Seattle, Portland</option>
+                    <option value="America/Denver">Mountain Time — Denver, Phoenix</option>
+                    <option value="America/Chicago">Central Time — Chicago, Dallas, Houston</option>
+                    <option value="America/New_York">Eastern Time — New York, Miami, Atlanta</option>
+                    <option value="America/Anchorage">Alaska Time — Anchorage</option>
+                    <option value="Pacific/Honolulu">Hawaii Time — Honolulu</option>
+                  </optgroup>
+                </select>
               </div>
             </div>
             
@@ -251,8 +277,7 @@ export default function LocationsPage() {
                         <div className="w-8 h-8 rounded-lg bg-[#f1f5f9] border border-[#cbd5e1] text-[#94a3b8] flex items-center justify-center shrink-0">
                           <MapPin size={16} />
                         </div>
-                        {editingLocationId === loc.id ? (
-                          <div className="flex items-center gap-2">
+                        {editingLocationId === loc.id ? (                          <div className="flex items-center gap-2">
                             <input
                               type="text"
                               value={editingName}
@@ -280,17 +305,19 @@ export default function LocationsPage() {
                         ) : (
                           <>
                             {loc.name}
-                            <button
-                              onClick={() => {
-                                setEditingLocationId(loc.id);
-                                setEditingName(loc.name);
-                                setSaveError(null);
-                              }}
-                              className="text-[#94a3b8] hover:text-[#0d1c2d] transition-colors p-1"
-                              title="Edit location name"
-                            >
-                              <Pencil size={14} />
-                            </button>
+                            {userRole === "owner" && (
+                              <button
+                                onClick={() => {
+                                  setEditingLocationId(loc.id);
+                                  setEditingName(loc.name);
+                                  setSaveError(null);
+                                }}
+                                className="text-[#94a3b8] hover:text-[#0d1c2d] transition-colors p-1"
+                                title="Edit location name"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

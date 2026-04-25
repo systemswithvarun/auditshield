@@ -15,17 +15,32 @@ export default function AuthConfirm() {
         return;
       }
 
-      const { data: org } = await supabase
+      // Check if user owns an org
+      const { data: ownedOrg } = await supabase
         .from("organizations")
         .select("id")
         .eq("owner_id", user.id)
         .maybeSingle();
 
-      if (org) {
+      if (ownedOrg) {
         router.replace("/admin/dashboard");
-      } else {
-        router.replace("/onboard/finish-setup");
+        return;
       }
+
+      // Check if user is an invited member of an org
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (membership) {
+        router.replace("/admin/dashboard");
+        return;
+      }
+
+      // No org ownership or membership — new user, needs onboarding
+      router.replace("/onboard/finish-setup");
     };
 
     check();

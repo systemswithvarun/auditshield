@@ -225,8 +225,8 @@ export default function InfoPage() {
             {[
               {
                 step: "1",
-                time: "Midnight",
-                desc: "System auto-generates the day's check schedule based on your stations and time windows.",
+                time: "Early hours, every day",
+                desc: "System auto-generates the day's check schedule based on your stations and time windows — timed to your location's timezone.",
               },
               {
                 step: "2",

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, Users, Loader2, LogOut, MapPin, Thermometer, FileSpreadsheet, CalendarClock, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, Loader2, LogOut, MapPin, Thermometer, FileSpreadsheet, CalendarClock, ShieldCheck, UsersRound } from "lucide-react";
 type Location = { id: string; name: string; slug: string };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -15,6 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [locSlug, setLocSlug] = useState("");
   const [locations, setLocations] = useState<Location[]>([]);
   const [showKioskPicker, setShowKioskPicker] = useState(false);
+  const [userRole, setUserRole] = useState<"owner" | "manager">("manager");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
 
         setOrgSlug(orgData.slug || "");
+        setUserRole(orgData.role || "manager");
 
         const { data: locData } = await supabase
           .from('locations')
@@ -69,6 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/staff-accountability", label: "Accountability", icon: ShieldCheck },
     { href: "/admin/stations", label: "Stations", icon: Thermometer },
     { href: "/admin/staff", label: "Staff", icon: Users },
+    { href: "/admin/team", label: "Team", icon: UsersRound },
   ];
 
   return (

@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(find /c/Users/Varun/.gemini/antigravity/scratch/auditshield -name *Info* -o -name *.html)",
-      "Bash(npx cc-status-line@latest)"
+      "Bash(npx cc-status-line@latest)",
+      "Bash(npx tsc --noEmit*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/Varun/.gemini/antigravity/scratch/auditshield && npx tsc --noEmit 2>&1 | tail -20"
+          }
+        ]
+      }
     ]
   }
 }
