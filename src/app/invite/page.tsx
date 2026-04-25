@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 
-export default function InvitePage() {
+function InviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -21,7 +21,6 @@ export default function InvitePage() {
       }
 
       try {
-        // Check if the invite exists and is still valid
         const { data: invite, error: inviteErr } = await supabase
           .from("manager_invites")
           .select("id, organization_id, email, accepted, expires_at")
@@ -46,7 +45,6 @@ export default function InvitePage() {
           return;
         }
 
-        // Check if user is already signed in
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
@@ -58,7 +56,6 @@ export default function InvitePage() {
           return;
         }
 
-        // User is signed in — redeem the invite
         await redeemInvite(invite, user.id);
       } catch (err: any) {
         setStatus("error");
@@ -70,7 +67,6 @@ export default function InvitePage() {
   }, [token]);
 
   const redeemInvite = async (invite: any, userId: string) => {
-    // Add to organization_members
     const { error: memberErr } = await supabase
       .from("organization_members")
       .insert({
@@ -86,7 +82,6 @@ export default function InvitePage() {
       return;
     }
 
-    // Mark invite as accepted
     await supabase
       .from("manager_invites")
       .update({ accepted: true })
@@ -95,7 +90,6 @@ export default function InvitePage() {
     setStatus("success");
     setTimeout(() => router.replace("/admin/dashboard"), 2000);
   };
-
 
   return (
     <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center p-4">
@@ -132,5 +126,20 @@ export default function InvitePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center p-4">
+        <div className="bg-white border border-black/10 rounded-2xl p-8 max-w-[420px] w-full text-center shadow-sm">
+          <Loader2 className="w-10 h-10 animate-spin text-[#0F172A]/30 mx-auto mb-4" />
+          <p className="text-[15px] text-[#45464d]">Loading…</p>
+        </div>
+      </div>
+    }>
+      <InviteContent />
+    </Suspense>
   );
 }
